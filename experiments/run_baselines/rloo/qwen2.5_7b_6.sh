@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 project_name='Baseline_4epochs'
-exp_name='Baseline_4epochs-Qwen2.5-Math-7B-rloo'
+exp_name='Baseline_4epochs-Qwen2.5-7B-it-rloo_6'
 
 adv_estimator=rloo
 
@@ -25,10 +25,10 @@ filter_groups_metric=acc
 max_num_gen_batches=1
 train_prompt_bsz=256
 gen_prompt_bsz=$((train_prompt_bsz * 1))
-n_resp_per_prompt=8
+n_resp_per_prompt=6
 train_prompt_mini_bsz=32
 # train_prompt_bsz=8
-# gen_prompt_bsz=$((train_prompt_bsz * 3))
+# gen_prompt_bsz=$((train_prompt_bsz * 1))
 # n_resp_per_prompt=2
 # train_prompt_mini_bsz=4
 # Ray
@@ -37,8 +37,8 @@ WORKING_DIR=${WORKING_DIR:-"${PWD}"}
 RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/experiments/run_baselines/runtime_env.yaml"}
 NNODES=${NNODES:-1}
 # Paths
-RAY_DATA_HOME=${RAY_DATA_HOME:-"/home/hieu/code_space/verl"}
-MODEL_PATH=${MODEL_PATH:-"/home/hieu/verl/models/Qwen2.5-Math-7B"}
+RAY_DATA_HOME=${RAY_DATA_HOME:-"/datas/wama/new_folder/VIP"}
+MODEL_PATH=${MODEL_PATH:-"${RAY_DATA_HOME}/models/Qwen2.5-7B-Instruct"}
 CKPTS_DIR=${CKPTS_DIR:-"${RAY_DATA_HOME}/ckpts/${project_name}/${exp_name}"}
 TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/vip-dapo-math-17k.parquet"}
 AIME_2024=${AIME_2024:-"${RAY_DATA_HOME}/data/vip-aime-2024.parquet"}
@@ -61,9 +61,9 @@ gen_tp=1
 
 ray job submit --runtime-env="${RUNTIME_ENV}" \
     --working-dir "${WORKING_DIR}" \
-    -- python3 -m recipe.dapo.main_dapo \
+    -- python3 -m src.verl.recipe.dapo.main_dapo \
     data.train_files="${TRAIN_FILE}" \
-    data.val_files=["${AIME_2024}","${AIME_2025}"] \
+    data.val_files=["${AIME_2024}","${AIME_2025}","${AMC}"] \
     data.prompt_key=prompt \
     data.truncation='left' \
     data.max_prompt_length=${max_prompt_length} \
