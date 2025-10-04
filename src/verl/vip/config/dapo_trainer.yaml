@@ -23,6 +23,17 @@ algorithm:
     enable: False # We try to avoid forgetting to set enable
     metric: null # acc / score / seq_reward / seq_final_reward / ...
     max_num_gen_batches: 0 # Non-positive values mean no upper limit
+  ema_decay: 0.9
+  enable_adaptive_repeat: False
+  enable_selection_allocation: True
+  election_random_seed: 1234
+  min_repeat_times: 4
+  enable_gpr_allocation: True
+  gpr_upper: 16
+  gpr_embedder: all-MiniLM-L6-v2
+  gpr_dataset: fixprompt-dapo-math-17k_17398
+  gpr_data_root: /home/hieunt/verl/data/embedding_data
+  allocation_rule: grpo
 
 trainer:
   project_name: verl-dapo
