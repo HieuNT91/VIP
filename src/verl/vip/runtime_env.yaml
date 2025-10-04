@@ -1,0 +1,7 @@
+working_dir: ./
+excludes: ["/.git/"]
+env_vars:
+  TORCH_NCCL_AVOID_RECORD_STREAMS: "1"
+  VLLM_USE_V1: "1"
+  CUDA_VISIBLE_DEVICES: "0,1,2,3,4,5,6,7"
+  WANDB_MODE: "offline"
