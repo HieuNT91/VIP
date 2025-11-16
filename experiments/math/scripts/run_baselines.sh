@@ -2,6 +2,7 @@
 set -xeuo pipefail
 
 adv_estimator=rloo
+# very important! please modify the max_position_embeddings in config.json to 32768 after downloading from huggingface
 BASE_MODEL=${BASE_MODEL:-"Qwen2.5-32B"}
 NGPUS=${NGPUS:-8}
 n_resp_per_prompt=${ROLLOUT_SIZE:-16}
@@ -83,6 +84,7 @@ python3 -m recipe.dapo.main_dapo \
     algorithm.filter_groups.metric=${filter_groups_metric} \
     actor_rollout_ref.model.use_remove_padding=True \
     actor_rollout_ref.actor.use_dynamic_bsz=${use_dynamic_bsz} \
+    +actor_rollout_ref.model.override_config.max_position_embeddings=32768 \
     actor_rollout_ref.ref.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.actor.ppo_max_token_len_per_gpu=${actor_ppo_max_token_len} \
