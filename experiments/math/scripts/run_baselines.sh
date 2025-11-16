@@ -60,7 +60,7 @@ gen_tp=1
 
 
 
-python3 -m recipe.dapo.main_dapo \
+python3 -m verl.recipe.dapo.main_dapo \
     data.train_files="${TRAIN_FILE}" \
     data.val_files=["${AIME24_FILE}","${AIME25_FILE}"] \
     data.prompt_key=prompt \
@@ -131,6 +131,8 @@ python3 -m recipe.dapo.main_dapo \
     trainer.test_freq=20 \
     trainer.save_freq=67 \
     trainer.total_epochs=3 \
+    trainer.total_training_steps=70 \
+    data.shuffle=False \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto \
     trainer.log_val_generations=17920 \
