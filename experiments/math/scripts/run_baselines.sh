@@ -11,6 +11,7 @@ BASE_MODEL=${BASE_MODEL:-"Qwen2.5-32B"}
 NGPUS=${NGPUS:-8}
 n_resp_per_prompt=${ROLLOUT_SIZE:-16}
 SEED=${SEED:-42}
+GPU_UTIL=${GPU_UTIL:-0.8}
 
 project_name="baseline-${BASE_MODEL}"
 exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-seed${SEED}"
@@ -105,7 +106,7 @@ python3 -m train.dapo.main_dapo \
     actor_rollout_ref.actor.grad_clip=1.0 \
     actor_rollout_ref.actor.loss_agg_mode=${loss_agg_mode} \
     actor_rollout_ref.actor.ulysses_sequence_parallel_size=${sp_size} \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.80 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=${GPU_UTIL} \
     actor_rollout_ref.rollout.tensor_model_parallel_size=${gen_tp} \
     actor_rollout_ref.rollout.enable_chunked_prefill=True \
     actor_rollout_ref.rollout.max_num_batched_tokens=$((max_prompt_length + max_response_length)) \
