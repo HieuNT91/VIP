@@ -1,5 +1,9 @@
 clone_space/
-tensorboard_log/
+tensorboard_logs/
+base_models/
+data/
+outputs/
+ray_tmp/
 
 *.parquet
 **/*.pt
