@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
+set -a 
+source .env
+set +a
+
 
 adv_estimator=rloo
 # very important! please modify the max_position_embeddings in config.json to 32768 after downloading from huggingface
