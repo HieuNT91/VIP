@@ -5,7 +5,7 @@ source .env
 set +a
 
 
-adv_estimator=rloo
+adv_estimator=${ADVANTAGE_ESTIMATOR:-"rloo"}
 # very important! please modify the max_position_embeddings in config.json to 32768 after downloading from huggingface
 BASE_MODEL=${BASE_MODEL:-"Qwen2.5-32B"}
 NGPUS=${NGPUS:-8}
@@ -88,7 +88,6 @@ python3 -m train.dapo.main_dapo \
     algorithm.filter_groups.metric=${filter_groups_metric} \
     actor_rollout_ref.model.use_remove_padding=True \
     actor_rollout_ref.actor.use_dynamic_bsz=${use_dynamic_bsz} \
-    +actor_rollout_ref.model.override_config.max_position_embeddings=32768 \
     actor_rollout_ref.ref.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.actor.ppo_max_token_len_per_gpu=${actor_ppo_max_token_len} \
@@ -96,7 +95,7 @@ python3 -m train.dapo.main_dapo \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
     actor_rollout_ref.model.path="${MODEL_PATH}" \
     actor_rollout_ref.model.enable_gradient_checkpointing=True \
-    actor_rollout_ref.actor.optim.lr=1e-6 \
+    actor_rollout_ref.actor.optim.lr=5e-6 \
     actor_rollout_ref.actor.optim.lr_warmup_steps=10 \
     actor_rollout_ref.actor.optim.weight_decay=0.1 \
     actor_rollout_ref.actor.ppo_mini_batch_size=${train_prompt_mini_bsz} \
@@ -134,9 +133,9 @@ python3 -m train.dapo.main_dapo \
     trainer.val_before_train=False \
     trainer.test_freq=20 \
     trainer.save_freq=67 \
-    trainer.total_epochs=3 \
-    trainer.total_training_steps=70 \
+    trainer.total_epochs=4 \
     data.shuffle=False \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto \
     trainer.log_val_generations=17920 \
+    # trainer.total_training_steps=70 \
