@@ -8,8 +8,9 @@ n_resp_per_prompt=${ROLLOUT_SIZE:-16}
 SEED=${SEED:-42}
 
 project_name="baseline-${BASE_MODEL}"
-
 exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-seed${SEED}"
+TENSORBOARD_DIR=${TENSORBOARD_DIR}/${project_name}/${exp_name}
+
 use_kl_in_reward=False
 kl_coef=0.0
 use_kl_loss=False
