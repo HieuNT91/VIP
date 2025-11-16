@@ -61,12 +61,15 @@ class Tracking:
         self.logger = {}
 
         if "tracking" in default_backend or "wandb" in default_backend:
+            import os
+
             import wandb
 
             settings = None
             if config and config["trainer"].get("wandb_proxy", None):
                 settings = wandb.Settings(https_proxy=config["trainer"]["wandb_proxy"])
-            wandb.init(project=project_name, name=experiment_name, config=config, settings=settings)
+            entity = os.environ.get("WANDB_ENTITY", None)
+            wandb.init(project=project_name, name=experiment_name, entity=entity, config=config, settings=settings)
             self.logger["wandb"] = wandb
 
         if "trackio" in default_backend:
@@ -249,8 +252,7 @@ class _TensorboardAdapter:
 
         from torch.utils.tensorboard import SummaryWriter
 
-        home_dir = os.environ.get("HOME_DIR")
-        tensorboard_dir = os.path.join(home_dir, f"tensorboard_log/{project_name}/{experiment_name}")
+        tensorboard_dir = os.environ.get("TENSORBOARD_DIR", f"tensorboard_log/{project_name}/{experiment_name}")
         os.makedirs(tensorboard_dir, exist_ok=True)
         print(f"Saving tensorboard log to {tensorboard_dir}.")
         self.writer = SummaryWriter(tensorboard_dir)
@@ -264,10 +266,34 @@ class _TensorboardAdapter:
 
 
 class _MlflowLoggingAdapter:
+    def __init__(self):
+        import logging
+        import re
+
+        self.logger = logging.getLogger(__name__)
+        # MLflow metric key validation logic:
+        # https://github.com/mlflow/mlflow/blob/master/mlflow/utils/validation.py#L157C12-L157C44
+        # Only characters allowed: slashes, alphanumerics, underscores, periods, dashes, colons,
+        # and spaces.
+        self._invalid_chars_pattern = re.compile(
+            r"[^/\w.\- :]"
+        )  # Allowed: slashes, alphanumerics, underscores, periods, dashes, colons, and spaces.
+
     def log(self, data, step):
         import mlflow
 
-        results = {k.replace("@", "_at_"): v for k, v in data.items()}
+        def sanitize_key(key):
+            # First replace @ with _at_ for backward compatibility
+            sanitized = key.replace("@", "_at_")
+            # Then replace any other invalid characters with _
+            sanitized = self._invalid_chars_pattern.sub("_", sanitized)
+            if sanitized != key:
+                self.logger.warning(
+                    "[MLflow] Metric key '%s' sanitized to '%s' due to invalid characters.", key, sanitized
+                )
+            return sanitized
+
+        results = {sanitize_key(k): v for k, v in data.items()}
         mlflow.log_metrics(metrics=results, step=step)
 
 
@@ -438,12 +464,11 @@ class ValidationGenerationsLogger:
 
             # Use the same directory structure as _TensorboardAdapter
             if self.project_name and self.experiment_name:
-                home_dir = os.environ.get("HOME_DIR")
-                default_dir = os.path.join(home_dir, "tensorboard_log", self.project_name, self.experiment_name)
+                default_dir = os.path.join("tensorboard_log", self.project_name, self.experiment_name)
             else:
                 default_dir = "tensorboard_log"
 
-            tensorboard_dir = default_dir
+            tensorboard_dir = os.environ.get("TENSORBOARD_DIR", default_dir)
             os.makedirs(tensorboard_dir, exist_ok=True)
             self.writer = SummaryWriter(log_dir=tensorboard_dir)
 
