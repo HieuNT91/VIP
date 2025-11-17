@@ -9,7 +9,10 @@ HOME_DIR=/storage2/hiu/VIP
 BASE_MODEL_DIR=${HOME_DIR}/base_models
 CKPTS_DIR=${HOME_DIR}/ckpts
 DATA_DIR=${HOME_DIR}/data
-TENSORBOARD_DIR=${HOME_DIR}/tensorboard_logs
+TENSORBOARD_DIR=${HOME_DIR}/logs/tensorboard_logs
+RAY_TMPDIR=${HOME_DIR}/ray_tmp
+VERL_FILE_LOGGER_ROOT=${HOME_DIR}/logs/file_logs
+VLLM_USE_V1=1
 ```
 
 
@@ -19,6 +22,6 @@ pip install -e .
 cd src/verl/ 
 USE_MEGATRON=0 bash scripts/install_vllm_sglang_mcore.sh
 pip install ninja 
-MAX_JOB=32 pip install --no-build-isolation flash-attn=2.7.4.post1
+MAX_JOBS=32 pip install --no-build-isolation flash-attn==2.7.2.post1
 pip install --no-deps -e .
 ```

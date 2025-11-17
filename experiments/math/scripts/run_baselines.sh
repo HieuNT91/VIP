@@ -26,9 +26,10 @@ clip_ratio_low=0.2
 clip_ratio_high=0.28
 
 max_prompt_length=$((1024 * 2))
-max_response_length=$((1024 * 16))
+response_length_multiple=${RESPONSE_LENGTH_MULTIPLE:-16}
+max_response_length=$((1024 * $response_length_multiple))
 enable_overlong_buffer=False
-overlong_buffer_len=$((1024 * 4))
+overlong_buffer_len=$((1024 * 1))
 overlong_penalty_factor=1.0
 
 loss_agg_mode="token-mean"
@@ -36,9 +37,9 @@ loss_agg_mode="token-mean"
 enable_filter_groups=False
 filter_groups_metric=acc
 max_num_gen_batches=10
-train_prompt_bsz=512
+train_prompt_bsz=${BATCH_SIZE:-512}
 gen_prompt_bsz=$((train_prompt_bsz * 1))
-train_prompt_mini_bsz=512 # set this equal to train_prompt_bsz to enable on_policy
+train_prompt_mini_bsz=${BATCH_SIZE:-512} # set this equal to train_prompt_bsz to enable on_policy
 
 
 # Paths

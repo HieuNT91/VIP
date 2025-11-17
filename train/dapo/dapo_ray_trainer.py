@@ -45,6 +45,17 @@ from verl.utils.profiler import marked_timer
 from verl.utils.rollout_skip import RolloutSkip
 
 
+def compute_index_accuracy(batch: DataProto):
+    acc = batch.non_tensor_batch['acc']
+    idx = batch.non_tensor_batch['index']
+    unique_idx = np.unique(idx)
+    results = []
+    for u_idx in unique_idx:
+        u_acc = acc[idx == u_idx]
+        results.append({'index': u_idx, 'accuracy': np.mean(u_acc)})
+    return results
+
+
 class RayDAPOTrainer(RayPPOTrainer):
     """
     Note that this trainer runs on the driver process on a single CPU/GPU node.
@@ -68,6 +79,13 @@ class RayDAPOTrainer(RayPPOTrainer):
             config=OmegaConf.to_container(self.config, resolve=True),
         )
 
+        rollout_data_logger = Tracking(
+            project_name=self.config.trainer.project_name,
+            experiment_name=self.config.trainer.experiment_name + "_rollout_data",
+            default_backend="file",
+            config=OmegaConf.to_container(self.config, resolve=True),
+        )
+        
         self.global_steps = 0
         self.gen_steps = 0
 
@@ -159,6 +177,7 @@ class RayDAPOTrainer(RayPPOTrainer):
 
                             del gen_baseline_batch, gen_baseline_output
 
+                    
                     new_batch.non_tensor_batch["uid"] = np.array(
                         [str(uuid.uuid4()) for _ in range(len(new_batch.batch))], dtype=object
                     )
@@ -203,6 +222,10 @@ class RayDAPOTrainer(RayPPOTrainer):
                             )  # TODO: This will be cleared if we use multiple genenration batches
                         else:
                             new_batch.batch["token_level_rewards"] = new_batch.batch["token_level_scores"]
+
+                    acc_report = compute_index_accuracy(new_batch)
+                    for item in acc_report:
+                        rollout_data_logger.log(data=item, step=self.global_steps)
 
                     if not self.config.algorithm.filter_groups.enable:
                         batch = new_batch
