@@ -1,3 +1,4 @@
+logs/
 clone_space/
 tensorboard_logs/
 base_models/
