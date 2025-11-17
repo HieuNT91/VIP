@@ -134,8 +134,8 @@ python3 -m train.dapo.main_dapo \
     trainer.n_gpus_per_node=${NGPUS} \
     trainer.nnodes="1" \
     trainer.val_before_train=False \
-    trainer.test_freq=20 \
-    trainer.save_freq=67 \
+    trainer.test_freq=15 \
+    trainer.save_freq=33 \
     trainer.total_epochs=3 \
     data.shuffle=False \
     trainer.default_local_dir="${CKPTS_DIR}" \
