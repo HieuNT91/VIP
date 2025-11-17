@@ -119,8 +119,6 @@ python3 -m train.dapo.main_dapo \
     actor_rollout_ref.rollout.val_kwargs.do_sample=True \
     actor_rollout_ref.rollout.val_kwargs.n=32 \
     actor_rollout_ref.rollout.name=vllm \
-    actor_rollout_ref.rollout.skip_rollout=True \
-    actor_rollout_ref.rollout.skip_dump_dir="${HOME_DIR}/tmp/rollout_dump" \
     actor_rollout_ref.ref.fsdp_config.param_offload=${offload} \
     actor_rollout_ref.ref.ulysses_sequence_parallel_size=${sp_size} \
     actor_rollout_ref.actor.fsdp_config.fsdp_size=-1 \
@@ -141,4 +139,6 @@ python3 -m train.dapo.main_dapo \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto \
     trainer.log_val_generations=17920 \
+    # actor_rollout_ref.rollout.skip_rollout=True \
+    # actor_rollout_ref.rollout.skip_dump_dir="${HOME_DIR}/tmp/rollout_dump" \
     # trainer.total_training_steps=70 \
