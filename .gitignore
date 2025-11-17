@@ -4,6 +4,7 @@ base_models/
 data/
 outputs/
 ray_tmp/
+tmp/
 
 *.parquet
 **/*.pt
