@@ -25,8 +25,8 @@ kl_loss_coef=0.0
 clip_ratio_low=0.2
 clip_ratio_high=0.28
 
-max_prompt_length=$((1024 * 2))
-response_length_multiple=${RESPONSE_LENGTH_MULTIPLE:-16}
+max_prompt_length=$((1024))
+response_length_multiple=${RESPONSE_LENGTH_MULTIPLE:-15}
 max_response_length=$((1024 * $response_length_multiple))
 enable_overlong_buffer=False
 overlong_buffer_len=$((1024 * 1))
@@ -39,13 +39,13 @@ filter_groups_metric=acc
 max_num_gen_batches=10
 train_prompt_bsz=${BATCH_SIZE:-512}
 gen_prompt_bsz=$((train_prompt_bsz * 1))
-train_prompt_mini_bsz=${BATCH_SIZE:-512} # set this equal to train_prompt_bsz to enable on_policy
+train_prompt_mini_bsz=${BATCH_SIZE:-64} # set this equal to train_prompt_bsz to enable on_policy
 
 
 # Paths
 MODEL_PATH="${BASE_MODEL_DIR}/${BASE_MODEL}"
 CKPTS_DIR=${CKPTS_DIR}/${project_name}/${exp_name}
-TRAIN_FILE=${DATA_DIR}/vip-dapo-math-17k.parquet
+TRAIN_FILE=${DATA_DIR}/vip-dapo-math-6k.parquet
 AIME24_FILE=${DATA_DIR}/vip-aime-2024.parquet
 AIME25_FILE=${DATA_DIR}/vip-aime-2025.parquet
 
@@ -133,9 +133,9 @@ python3 -m train.dapo.main_dapo \
     trainer.n_gpus_per_node=${NGPUS} \
     trainer.nnodes="1" \
     trainer.val_before_train=False \
-    trainer.test_freq=15 \
-    trainer.save_freq=33 \
-    trainer.total_epochs=3 \
+    trainer.test_freq=5 \
+    trainer.save_freq=5 \
+    trainer.total_epochs=5 \
     data.shuffle=False \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto \
