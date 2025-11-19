@@ -134,7 +134,7 @@ python3 -m train.dapo.main_dapo \
     trainer.nnodes="1" \
     trainer.val_before_train=False \
     trainer.test_freq=5 \
-    trainer.save_freq=5 \
+    trainer.save_freq=11 \
     trainer.total_epochs=5 \
     data.shuffle=False \
     trainer.default_local_dir="${CKPTS_DIR}" \
