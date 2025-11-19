@@ -37,9 +37,9 @@ loss_agg_mode="token-mean"
 enable_filter_groups=False
 filter_groups_metric=acc
 max_num_gen_batches=10
-train_prompt_bsz=${BATCH_SIZE:-512}
+train_prompt_bsz=512
 gen_prompt_bsz=$((train_prompt_bsz * 1))
-train_prompt_mini_bsz=${BATCH_SIZE:-64} # set this equal to train_prompt_bsz to enable on_policy
+train_prompt_mini_bsz=64 # set this equal to train_prompt_bsz to enable on_policy
 
 
 # Paths
