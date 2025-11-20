@@ -44,7 +44,6 @@ class GPR:
                 reuse_mean=False,
                 return_std=False, 
                 qid_to_idx=None, 
-                idx_to_qid=None,
                 prior_value=-1,
                  ):
         self.distance_matrix = distance_matrix
@@ -55,7 +54,6 @@ class GPR:
         self.reuse_mean = reuse_mean
         self.return_std = return_std
         self.qid_to_idx = qid_to_idx
-        self.idx_to_qid = idx_to_qid
         self.prior_value = prior_value
         
     def _logit(self, p, eps=1e-6):
@@ -111,147 +109,3 @@ class GPR:
 
 def acc_to_var(acc):
     return acc * (1 - acc)
-
-
-def main():
-    args = parse_args()
-    
-    # Construct paths based on arguments
-    embedding_path = f"/home/hieunt/verl/data/embedding_data/embeddings_{args.embedder}_{args.dataset}.npy"
-    pairwise_path = f"/home/hieunt/verl/data/embedding_data/pairwise_{args.embedder}_{args.dataset}_matrix.npy"
-    indices_path = f"/home/hieunt/verl/data/embedding_data/indices_{args.embedder}_{args.dataset}.json"
-    regression_json_path = f"/home/hieunt/verl/data/regression_data/{args.regression_data}/per_question_statistics_latest.json"
-    
-    # Check if files exist
-    for path in [embedding_path, pairwise_path, indices_path, regression_json_path]:
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"File not found: {path}")
-    
-    print(f"Loading data from:")
-    print(f"  Embedding path: {embedding_path}")
-    print(f"  Pairwise path: {pairwise_path}")
-    print(f"  Indices path: {indices_path}")
-    print(f"  Regression path: {regression_json_path}")
-    
-    from time_data_simulator import TimeDataSimulator, TimeDataSimulatorConfig
-    cfg = TimeDataSimulatorConfig(
-        embedding_path=embedding_path,
-        pairwise_path=pairwise_path,
-        indices_path=indices_path,
-        regression_json_path=regression_json_path,
-        batch_size=256,
-    )
-    
-    # Load indices and build mappings
-    with open(indices_path, "r") as f:
-        indices = json.load(f)
-
-    idx_to_qid = {i: qid for i, qid in enumerate(indices)}
-    qid_to_idx = {str(qid): i for i, qid in enumerate(indices)}
-    
-    # Initialize simulator and GPR
-    sim = TimeDataSimulator(cfg)
-    gpr = GPR(
-        sim.pairwise_matrix, 
-        return_std=args.return_std,
-        reuse_covariance=args.reuse_covariance,
-        reuse_mean=args.reuse_mean,
-        qid_to_idx=qid_to_idx,
-        idx_to_qid=idx_to_qid,
-        prior_value=args.prior_value,
-    )
-    
-    # Run evaluation
-    step_to_metrics = {}
-    for step in range(args.start_step, args.end_step + 1, args.step_size):
-        out = sim.get_train_test_features(
-            step=step,
-            window_size=args.window_size,
-            target_key=args.target_key,
-        )
-        X_train, P_train, y_train = out["train"]["X"], out["train"]["P"], out["train"]["y"]
-        X_test, P_test, y_test = out["test"]["X"], out["test"]["P"], out["test"]["y"]
-        qids_train = out["train"]["qids"]
-        qids_test = out["test"]["qids"]
-
-        indices_train = out["train"]["indices"]
-        indices_test = out["test"]["indices"]
-        
-        gpr.fit_qids(qids_train, y_train)
-        mean_pred_test, cov_pred_test = gpr.predict_qids(qids_test)
-        
-        budgeted = allocate_rollout(mean_pred_test, 8*256, upper=32)
-        budgeted = allocate_rollout(np.round(mean_pred_test,2), 8*256, upper=32)
-        for p, b in zip(mean_pred_test, budgeted):
-            if p >= 0.5 and b < 16:
-                print(f"High pred {p:.4f} but low budget {b}")
-
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(6, 4))
-        plt.scatter(mean_pred_test, budgeted, alpha=0.7, edgecolors='k')
-        plt.xlabel("Predicted mean p")
-        plt.ylabel("Allocated budget")
-        plt.title("Budget allocation vs predicted p")
-        plt.grid(True)
-
-        # save to file (PNG, 300 dpi)
-        plt.savefig("budget_vs_p.png", dpi=300, bbox_inches='tight')
-        print(np.std(mean_pred_test), np.std(np.round(mean_pred_test, 2)))
-        breakpoint()
-        from sklearn.metrics import mean_squared_error, r2_score
-        mse_test = mean_squared_error(y_test, mean_pred_test)
-        r2_test = r2_score(y_test, mean_pred_test)
-        almost_close_count = np.sum((abs(y_test - mean_pred_test) <= 0.1))
-        almost_close_ratio = almost_close_count / len(y_test)
-        almost_close_count_15 = np.sum(np.abs(y_test - mean_pred_test) <= 0.15)
-        almost_close_ratio_15 = almost_close_count_15 / len(y_test)
-        
-        # print(f"Step {step} - Test MSE: {mse_test:.3f}, R2: {r2_test:.3f}, Almost Close Ratio: {almost_close_ratio:.3f}, "
-        #       f"Min Pred: {mean_pred_test.min():.4f}, Max Pred: {mean_pred_test.max():.4f}, std Pred: {np.std(mean_pred_test):.4f}")
-        
-        # Print a few example predictions
-        # for i in range(min(5, len(mean_pred_test))):
-        #     print(f"  y_true={y_test[i]:.4f}, y_pred={mean_pred_test[i]:.4f}")
-        
-        step_to_metrics[step] = {
-            "mse": float(mse_test),
-            "r2": float(r2_test),
-            "almost_close_ratio_0.1": float(almost_close_ratio),
-            "almost_close_ratio_0.15": float(almost_close_ratio_15),
-            "min_pred": float(np.min(mean_pred_test)),
-            "max_pred": float(np.max(mean_pred_test)),
-            "std_pred": float(np.std(mean_pred_test)),
-        }
-    
-    # Calculate average metrics for first and second half
-    mid_step = (args.start_step + args.end_step) // 2
-    first_half_metrics = {}
-    second_half_metrics = {}
-    
-    for k in step_to_metrics[args.start_step].keys():
-        first_half_avg = np.mean([step_to_metrics[j][k] for j in range(args.start_step, mid_step + 1)])
-        second_half_avg = np.mean([step_to_metrics[j][k] for j in range(mid_step + 1, args.end_step + 1)])
-        print(f"{k}: {first_half_avg:.4f}, {second_half_avg:.4f}")
-        first_half_metrics[k] = float(first_half_avg)
-        second_half_metrics[k] = float(second_half_avg)
-    
-    # Save results
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    config_name = f"{args.embedder}_{args.dataset}_w{args.window_size}_rc{int(args.reuse_covariance)}_rm{int(args.reuse_mean)}_p{args.prior_value}"
-    
-    os.makedirs(args.output_dir, exist_ok=True)
-    results = {
-        "config": vars(args),
-        "first_half_metrics": first_half_metrics,
-        "second_half_metrics": second_half_metrics,
-        "step_to_metrics": step_to_metrics,
-    }
-    
-    output_path = os.path.join(args.output_dir, f"{config_name}_{timestamp}.json")
-    with open(output_path, "w") as f:
-        json.dump(results, f, indent=2)
-    
-    print(f"Results saved to {output_path}")
-
-if __name__ == "__main__":
-    main()
