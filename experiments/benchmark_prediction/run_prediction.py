@@ -12,6 +12,7 @@ from vip.success_rate_prediction.gaussian_process import GPR
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from matplotlib import pyplot as plt
 import numpy as np 
+from sklearn.linear_model import LinearRegression
 
 @dataclass 
 class Config:
@@ -150,7 +151,8 @@ def main(**kwargs):
     
     errors = []
     mean_baseline_errors = []
-    
+    linear_regression_errors = []
+    linreg = LinearRegression() 
     for step in steps[config.window_size:]: # use data of previous step to train gpr, then predict current step
         
         training_steps = list(range(max(0, step - config.window_size), step))
@@ -173,16 +175,24 @@ def main(**kwargs):
         mean_baseline_mae = mean_absolute_error(test_accuracies, mean_baseline_preds)
         mean_baseline_errors.append(mean_baseline_mae)
         
+        X_train = torch.stack([embeddings[uid] for uid in train_question_uids]).numpy()
+        y_train = np.array(train_accuracies)
+        linreg.fit(X_train, y_train)
+        X_test = torch.stack([embeddings[uid] for uid in test_question_uids]).numpy()
+        linear_regression_preds = linreg.predict(X_test)
+        linear_regression_mae = mean_absolute_error(test_accuracies, linear_regression_preds)
+        linear_regression_errors.append(linear_regression_mae)
+        
         mae = mean_absolute_error(test_accuracies, preds)
         errors.append(mae)
         print(preds[:10])
-        print(f"Step {step} MAE: {mae:.4f}")
-        print()
+        print(f"Step {step} MAE: {mae:.4f} | Mean Baseline MAE: {mean_baseline_mae:.4f} | Linear Regression MAE: {linear_regression_mae:.4f}")
 
     # plot overall error trend time 
     plt.figure(figsize=(8,6))
     plt.plot(steps[config.window_size:], errors, marker='o', label="GPR MAE")
     plt.plot(steps[config.window_size:], mean_baseline_errors, marker='x', label="Mean Baseline MAE")
+    plt.plot(steps[config.window_size:], linear_regression_errors, marker='^', label="Linear Regression MAE")
     plt.title("GPR Prediction MAE over Steps")
     plt.xlabel("Step")
     plt.ylabel("Mean Absolute Error")
