@@ -21,11 +21,12 @@ class Config:
     accuracy_series_data_path: str = field(default="logs/file_logs/rloo-Qwen2.5-Math-7B-rolloutn4-seed1_rollout_data.jsonl")
     embedding_cache_dir: str = field(default="tmp/")
     batch_size: int = field(default=32)
-    prior_value: float = field(default=-1.0)
+    prior_value: float = field(default=-5.0)
     reuse_mean: bool = field(default=True)
     reuse_covariance: bool = field(default=False)
     return_std:  bool = field(default=True)
-    window_size: int = field(default=3)
+    window_size: int = field(default=1)
+    end_step: int = field(default=60)
     
     
 def clean_name(name: str):
@@ -153,7 +154,7 @@ def main(**kwargs):
     mean_baseline_errors = []
     linear_regression_errors = []
     linreg = LinearRegression() 
-    END = 60
+    END = config.end_step
     for step in steps[config.window_size:END]: # use data of previous step to train gpr, then predict current step
         
         training_steps = list(range(max(0, step - config.window_size), step))
