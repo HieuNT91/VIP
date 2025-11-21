@@ -182,7 +182,6 @@ class RayVIPTrainer(RayPPOTrainer):
 
                             del gen_baseline_batch, gen_baseline_output
 
-                    breakpoint()
                     new_batch.non_tensor_batch["uid"] = np.array(
                         [str(uuid.uuid4()) for _ in range(len(new_batch.batch))], dtype=object
                     )
@@ -454,7 +453,7 @@ class RayVIPTrainer(RayPPOTrainer):
             distance_matrix=pairwise_dists.numpy(),
             reuse_covariance=False,
             reuse_mean=True,
-            return_std=True,
+            return_std=False,
             qid_to_idx=qid_to_idx,
             prior_value=-5
         )

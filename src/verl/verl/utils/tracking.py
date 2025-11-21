@@ -241,6 +241,7 @@ class FileLogger:
     def log(self, data, step):
         data = {"step": step, "data": data}
         self.fp.write(json.dumps(data) + "\n")
+        self.fp.flush()
 
     def finish(self):
         self.fp.close()
