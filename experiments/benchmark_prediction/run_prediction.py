@@ -153,7 +153,8 @@ def main(**kwargs):
     mean_baseline_errors = []
     linear_regression_errors = []
     linreg = LinearRegression() 
-    for step in steps[config.window_size:]: # use data of previous step to train gpr, then predict current step
+    END = 60
+    for step in steps[config.window_size:END]: # use data of previous step to train gpr, then predict current step
         
         training_steps = list(range(max(0, step - config.window_size), step))
         train_data = gather_data_by_steps(accuracy_series_data, training_steps)
@@ -190,15 +191,22 @@ def main(**kwargs):
 
     # plot overall error trend time 
     plt.figure(figsize=(8,6))
-    plt.plot(steps[config.window_size:], errors, marker='o', label="GPR MAE")
-    plt.plot(steps[config.window_size:], mean_baseline_errors, marker='x', label="Mean Baseline MAE")
-    plt.plot(steps[config.window_size:], linear_regression_errors, marker='^', label="Linear Regression MAE")
-    plt.title("GPR Prediction MAE over Steps")
-    plt.xlabel("Step")
-    plt.ylabel("Mean Absolute Error")
+    plt.plot(steps[config.window_size:END], errors, marker='o', label="VIP (Gaussian Process)")
+    plt.plot(steps[config.window_size:END], mean_baseline_errors, marker='x', label="Moving Average")
+    plt.plot(steps[config.window_size:END], linear_regression_errors, marker='^', label="Linear Regression")
+
+    plt.title("Prompt success rate prediction error", fontsize=18)
+    plt.xlabel("Gradient step", fontsize=18)
+    plt.ylabel("Mean Absolute Error", fontsize=18)
+
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+
+    plt.legend(fontsize=14, loc='upper right') 
+
     plt.grid(True)
-    plt.legend()
-    plt.savefig("gpr_prediction_mae_over_steps.png")
+    plt.tight_layout()
+    plt.savefig("tmp/gpr_prediction_mae_over_steps.pdf")
 
             
             
