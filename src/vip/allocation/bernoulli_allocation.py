@@ -174,7 +174,7 @@ def allocate_rollout(question_accs, batch_budget, lower=4, upper=32, allocation_
     # lmbda = search_for_lmbda(a_list, batch_budget, upper=upper, lower_lmbda=-100, upper_lmbda=100)
     # allocated_budgets = [n_star(a_i, lmbda, upper=upper) for a_i in a_list]
     question_accs = np.clip(question_accs, 1e-6, 1-1e-6)
-    if np.std(question_accs) < 1e-3:
+    if np.std(question_accs) < 1e-6:
         n_questions = len(question_accs)
 
         # Case 1: not enough budget to give everyone `lower`
