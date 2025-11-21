@@ -137,8 +137,8 @@ python3 -m train.vip.main_vip \
     trainer.n_gpus_per_node=${NGPUS} \
     trainer.nnodes="1" \
     trainer.val_before_train=False \
-    trainer.test_freq=5 \
-    trainer.save_freq=11 \
+    trainer.test_freq=2 \
+    trainer.save_freq=5 \
     trainer.total_epochs=${total_epochs} \
     data.shuffle=False \
     trainer.default_local_dir="${CKPTS_DIR}" \
