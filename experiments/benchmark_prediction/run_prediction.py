@@ -202,11 +202,11 @@ def main(**kwargs):
     plt.xticks(fontsize=16)
     plt.yticks(fontsize=16)
 
-    plt.legend(fontsize=14, loc='upper right') 
+    plt.legend(fontsize=14, loc='upper left') 
 
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("tmp/gpr_prediction_mae_over_steps.pdf")
+    plt.savefig("tmp/gpr_prediction_mae.pdf")
 
             
             
