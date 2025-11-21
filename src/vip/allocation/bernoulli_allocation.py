@@ -169,11 +169,35 @@ def solve(a, question_accs, batch_budget, lower=4, upper=32, allocation_rule="rl
     return n_vec
 
 
-def allocate_rollout(question_accs, batch_budget, lower=4, upper=32, allocation_rule="rloo"):
+def allocate_rollout(question_accs, batch_budget, lower=4, upper=32, allocation_rule="rloo", min_keep=4):
     # a_list = [float(calculate_a(acc)) for acc in question_accs]
     # lmbda = search_for_lmbda(a_list, batch_budget, upper=upper, lower_lmbda=-100, upper_lmbda=100)
     # allocated_budgets = [n_star(a_i, lmbda, upper=upper) for a_i in a_list]
     question_accs = np.clip(question_accs, 1e-6, 1-1e-6)
+    if np.std(question_accs) < 1e-3:
+        n_questions = len(question_accs)
+
+        # Case 1: not enough budget to give everyone `lower`
+        if batch_budget < min_keep * n_questions:
+            assert batch_budget % min_keep == 0, \
+                f"batch_budget={batch_budget} must be multiple of lower={min_keep}"
+            units = batch_budget // min_keep  
+            alloc = np.zeros(n_questions, dtype=int)
+            chosen = np.random.choice(n_questions, size=units, replace=True)
+            for idx in chosen:
+                alloc[idx] += min_keep
+
+            return alloc.tolist()
+
+        # Case 2: budget is large enough, distribute evenly
+        base_alloc = batch_budget // n_questions
+        remainder = batch_budget % n_questions
+        alloc = np.full(n_questions, base_alloc, dtype=int)
+        for i in range(remainder):
+            alloc[i] += 1
+
+        return alloc.tolist()
+    
     a = question_accs * (1 - question_accs)
     allocated_budgets = solve(a, 
                             question_accs, 

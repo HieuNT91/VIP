@@ -11,13 +11,13 @@ BASE_MODEL=${BASE_MODEL:-"Qwen2.5-32B"}
 NGPUS=${NGPUS:-8}
 SEED=${SEED:-42}
 GPU_UTIL=${GPU_UTIL:-0.8}
-
+total_epochs=${TOTAL_EPOCHS:-5}
 project_name="baseline-${BASE_MODEL}"
 n_resp_per_prompt=${ROLLOUT_SIZE:-16}
 train_prompt_bsz=${BATCH_SIZE:-256}
 batch_budget=${BATCH_BUDGET:-2048}
 verbose=${VERBOSE:-True}
-exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-budget${batch_budget}-bz${train_prompt_bsz}-seed${SEED}"
+exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-budget${batch_budget}-bz${train_prompt_bsz}-e${total_epochs}-seed${SEED}"
 TENSORBOARD_DIR=${TENSORBOARD_DIR}/${project_name}/${exp_name}
 
 use_kl_in_reward=False
@@ -139,7 +139,7 @@ python3 -m train.vip.main_vip \
     trainer.val_before_train=False \
     trainer.test_freq=5 \
     trainer.save_freq=11 \
-    trainer.total_epochs=5 \
+    trainer.total_epochs=${total_epochs} \
     data.shuffle=False \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto \

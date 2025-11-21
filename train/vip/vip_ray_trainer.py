@@ -511,7 +511,7 @@ class RayVIPTrainer(RayPPOTrainer):
             train_question_uids,
             train_accuracies
         )
-        preds = self.predictor.predict_qids(question_uuids)
+        preds, _ = self.predictor.predict_qids(question_uuids)
         preds = preds.tolist()
         allocation = allocate_rollout(preds, batch_budget=self.config.algorithm.allocation.batch_budget, lower=1, upper=32)
         
