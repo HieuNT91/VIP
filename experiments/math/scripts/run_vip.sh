@@ -18,7 +18,8 @@ train_prompt_bsz=${BATCH_SIZE:-256}
 batch_budget=${BATCH_BUDGET:-2048}
 verbose=${VERBOSE:-True}
 learning_rate=${LEARNING_RATE:-1e-6}
-exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-budget${batch_budget}-bz${train_prompt_bsz}-e${total_epochs}-lr${learning_rate}-seed${SEED}"
+data_split=${DATA_SPLIT:-"6"} # can be 6 or 17
+exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-budget${batch_budget}-bz${train_prompt_bsz}-e${total_epochs}-lr${learning_rate}-math${data_split}k-seed${SEED}"
 TENSORBOARD_DIR=${TENSORBOARD_DIR}/${project_name}/${exp_name}
 
 use_kl_in_reward=False
