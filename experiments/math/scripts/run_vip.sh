@@ -17,7 +17,8 @@ n_resp_per_prompt=${ROLLOUT_SIZE:-16}
 train_prompt_bsz=${BATCH_SIZE:-256}
 batch_budget=${BATCH_BUDGET:-2048}
 verbose=${VERBOSE:-True}
-exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-budget${batch_budget}-bz${train_prompt_bsz}-e${total_epochs}-seed${SEED}"
+learning_rate=${LEARNING_RATE:-1e-6}
+exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-budget${batch_budget}-bz${train_prompt_bsz}-e${total_epochs}-lr${learning_rate}-seed${SEED}"
 TENSORBOARD_DIR=${TENSORBOARD_DIR}/${project_name}/${exp_name}
 
 use_kl_in_reward=False
@@ -101,8 +102,8 @@ python3 -m train.vip.main_vip \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
     actor_rollout_ref.model.path="${MODEL_PATH}" \
     actor_rollout_ref.model.enable_gradient_checkpointing=True \
-    actor_rollout_ref.actor.optim.lr=1e-6 \
-    actor_rollout_ref.actor.optim.lr_warmup_steps=5 \
+    actor_rollout_ref.actor.optim.lr=${learning_rate} \
+    actor_rollout_ref.actor.optim.lr_warmup_steps=2 \
     actor_rollout_ref.actor.optim.weight_decay=0.1 \
     actor_rollout_ref.actor.ppo_mini_batch_size=${train_prompt_mini_bsz} \
     actor_rollout_ref.actor.fsdp_config.param_offload=${offload} \
@@ -137,7 +138,7 @@ python3 -m train.vip.main_vip \
     trainer.n_gpus_per_node=${NGPUS} \
     trainer.nnodes="1" \
     trainer.val_before_train=False \
-    trainer.test_freq=2 \
+    trainer.test_freq=5 \
     trainer.save_freq=5 \
     trainer.total_epochs=${total_epochs} \
     data.shuffle=False \
