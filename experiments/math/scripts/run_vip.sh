@@ -49,7 +49,7 @@ train_prompt_mini_bsz=64 # set this equal to train_prompt_bsz to enable on_polic
 # Paths
 MODEL_PATH="${BASE_MODEL_DIR}/${BASE_MODEL}"
 CKPTS_DIR=${CKPTS_DIR}/${project_name}/${exp_name}
-TRAIN_FILE=${DATA_DIR}/vip-dapo-math-6k.parquet
+TRAIN_FILE=${DATA_DIR}/vip-dapo-math-${data_split}k.parquet
 AIME24_FILE=${DATA_DIR}/vip-aime-2024.parquet
 AIME25_FILE=${DATA_DIR}/vip-aime-2025.parquet
 
