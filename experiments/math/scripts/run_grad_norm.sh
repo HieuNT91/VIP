@@ -13,8 +13,8 @@ n_resp_per_prompt=${ROLLOUT_SIZE:-16}
 SEED=${SEED:-42}
 GPU_UTIL=${GPU_UTIL:-0.8}
 
-project_name="baseline-${BASE_MODEL}"
-exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-seed${SEED}"
+project_name="statistical_test"
+exp_name="1.5B"
 TENSORBOARD_DIR=${TENSORBOARD_DIR}/${project_name}/${exp_name}
 
 use_kl_in_reward=False
@@ -97,8 +97,8 @@ python3 -m train.dapo.main_calc_grad_norm \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
     actor_rollout_ref.model.path="${MODEL_PATH}" \
     actor_rollout_ref.model.enable_gradient_checkpointing=True \
-    actor_rollout_ref.actor.optim.lr=1e-6 \
-    actor_rollout_ref.actor.optim.lr_warmup_steps=20 \
+    actor_rollout_ref.actor.optim.lr=0\
+    actor_rollout_ref.actor.optim.lr_warmup_steps=10000 \
     actor_rollout_ref.actor.optim.weight_decay=0.1 \
     actor_rollout_ref.actor.ppo_mini_batch_size=${train_prompt_mini_bsz} \
     actor_rollout_ref.actor.fsdp_config.param_offload=${offload} \
