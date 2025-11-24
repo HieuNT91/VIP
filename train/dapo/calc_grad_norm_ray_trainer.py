@@ -85,12 +85,7 @@ class GradNormCalcTrainer(RayPPOTrainer):
             default_backend="file",
             config=OmegaConf.to_container(self.config, resolve=True),
         )
-        gradnorm_data_logger = Tracking(
-            project_name=self.config.trainer.project_name,
-            experiment_name=self.config.trainer.experiment_name + "_gradnorm_data",
-            default_backend="file",
-            config=OmegaConf.to_container(self.config, resolve=True),
-        )
+        
         
         self.global_steps = 0
         self.gen_steps = 0
@@ -132,6 +127,13 @@ class GradNormCalcTrainer(RayPPOTrainer):
         batch = None
         num_prompt_in_batch = 0
         num_gen_batches = 0
+        
+        gradnorm_data_logger = Tracking(
+            project_name=self.config.trainer.project_name,
+            experiment_name=self.config.trainer.experiment_name + f"_gradnorm_data_global_step_{self.global_steps}",
+            default_backend="file",
+            config=OmegaConf.to_container(self.config, resolve=True),
+        )
         for epoch in range(self.config.trainer.total_epochs):
             for batch_dict in self.train_dataloader:
                 metrics = {}
