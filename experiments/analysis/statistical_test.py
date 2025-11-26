@@ -1,63 +1,63 @@
 ########## Fisher's method##########
-import json
-import numpy as np
-from scipy.stats import pearsonr, chi2
+# import json
+# import numpy as np
+# from scipy.stats import pearsonr, chi2
 
-# Load JSON file
-data = {}
-with open("logs/file_logs/baseline-Qwen2.5-Math-1.5B/rloo-Qwen2.5-Math-1.5B-rolloutn32-seed1_gradnorm_data.jsonl", "r") as f:
-    for line in f.readlines():
-        entry = json.loads(line)
-        index = entry['data']["index"]
-        grad_norm = entry['data']["grad_norm"]
-        response_length = entry['data']["response_length"]
-        accuracy = entry['data']["accuracy"]
-        data[index] = {
-            "grad_sum": grad_norm,
-            "response_length": response_length,
-            "accuracy": accuracy
-        }
+# # Load JSON file
+# data = {}
+# with open("logs/file_logs/baseline-Qwen2.5-Math-1.5B/rloo-Qwen2.5-Math-1.5B-rolloutn32-seed1_gradnorm_data.jsonl", "r") as f:
+#     for line in f.readlines():
+#         entry = json.loads(line)
+#         index = entry['data']["index"]
+#         grad_norm = entry['data']["grad_norm"]
+#         response_length = entry['data']["response_length"]
+#         accuracy = entry['data']["accuracy"]
+#         data[index] = {
+#             "grad_sum": grad_norm,
+#             "response_length": response_length,
+#             "accuracy": accuracy
+#         }
 
-p_values = []
-results = []
+# p_values = []
+# results = []
 
-for qid, info in data.items():
-    grad_sum = np.array(info["grad_sum"])
-    response_length = np.array(info["response_length"])
-    accuracy = np.array(info["accuracy"], dtype=int)
+# for qid, info in data.items():
+#     grad_sum = np.array(info["grad_sum"])
+#     response_length = np.array(info["response_length"])
+#     accuracy = np.array(info["accuracy"], dtype=int)
     
-    R = 2 * accuracy - 1
-    Z = grad_sum / response_length
+#     R = 2 * accuracy - 1
+#     Z = grad_sum / response_length
     
-    # Check variance
-    if np.std(R) == 0 or np.std(Z) == 0:
-        corr, p_value = np.nan, np.nan
-    else:
-        corr, p_value = pearsonr(R, Z)
-        p_values.append(p_value)
+#     # Check variance
+#     if np.std(R) == 0 or np.std(Z) == 0:
+#         corr, p_value = np.nan, np.nan
+#     else:
+#         corr, p_value = pearsonr(R, Z)
+#         p_values.append(p_value)
     
-    results.append((qid, corr, p_value))
+#     results.append((qid, corr, p_value))
 
-# Print per-question results
-for qid, corr, pval in results:
-    print(f"Question {qid}: Pearson r = {corr}, p-value = {pval}")
+# # Print per-question results
+# for qid, corr, pval in results:
+#     print(f"Question {qid}: Pearson r = {corr}, p-value = {pval}")
 
-# Only combine valid p-values
-if len(p_values) > 0:
-    chi2_fisher = -2 * np.sum(np.log(p_values))
-    df = 2 * len(p_values)
-    p_global = 1 - chi2.cdf(chi2_fisher, df)
+# # Only combine valid p-values
+# if len(p_values) > 0:
+#     chi2_fisher = -2 * np.sum(np.log(p_values))
+#     df = 2 * len(p_values)
+#     p_global = 1 - chi2.cdf(chi2_fisher, df)
     
-    print("\nGlobal test using Fisher's method:")
-    print(f"Chi2 statistic = {chi2_fisher:.4f}, df = {df}, p_global = {p_global:.4f}")
+#     print("\nGlobal test using Fisher's method:")
+#     print(f"Chi2 statistic = {chi2_fisher:.4f}, df = {df}, p_global = {p_global:.4f}")
     
-    alpha = 0.1
-    if p_global < alpha:
-        print("Reject the global null hypothesis.")
-    else:
-        print("Fail to reject the global null hypothesis.")
-else:
-    print("\nNo valid correlations (all had zero variance). Cannot perform Fisher's method.")
+#     alpha = 0.1
+#     if p_global < alpha:
+#         print("Reject the global null hypothesis.")
+#     else:
+#         print("Fail to reject the global null hypothesis.")
+# else:
+#     print("\nNo valid correlations (all had zero variance). Cannot perform Fisher's method.")
 
 
 # import seaborn as sns
@@ -190,47 +190,52 @@ else:
 
 ############ Levene's Test for Equal Variances ############
 
-# import json
-# import numpy as np
-# from scipy.stats import levene
+import json
+import numpy as np
+from scipy.stats import levene
 
-# # Load JSON file
-# data = {}
-# with open("logs/file_logs/baseline-Qwen2.5-Math-1.5B/rloo-Qwen2.5-Math-1.5B-rolloutn32-seed1_gradnorm_data.jsonl", "r") as f:
-#     for line in f.readlines():
-#         entry = json.loads(line)
-#         index = entry['data']["index"]
-#         grad_norm = entry['data']["grad_norm"]
-#         response_length = entry['data']["response_length"]
-#         accuracy = entry['data']["accuracy"]
-#         data[index] = {
-#             "grad_sum": grad_norm,
-#             "response_length": response_length,
-#             "accuracy": accuracy
-#         }
+# Load JSON file
+data = {}
+with open("logs/file_logs/baseline-Qwen2.5-Math-1.5B/rloo-Qwen2.5-Math-1.5B-rolloutn32-seed1_gradnorm_data.jsonl", "r") as f:
+    it = 0
+    for line in f.readlines():
+        entry = json.loads(line)
+        index = entry['data']["index"]
+        grad_norm = entry['data']["grad_norm"]
+        response_length = entry['data']["response_length"]
+        accuracy = entry['data']["accuracy"]
+        data[index] = {
+            "grad_sum": grad_norm,
+            "response_length": response_length,
+            "accuracy": accuracy
+        }
+        it += 1
+        if it == 3:
+            break
 
-# # Collect Z samples per question
-# groups = []
-# for qid, info in data.items():
-#     grad_sum = np.array(info["grad_sum"])
-#     response_length = np.array(info["response_length"])
-#     Z = grad_sum / response_length
-#     if np.std(Z) != 0:  # skip zero variance questions
-#         groups.append(Z)
+# Collect Z samples per question
+groups = []
+for qid, info in data.items():
+    grad_sum = np.array(info["grad_sum"])
+    response_length = np.array(info["response_length"])
+    Z = grad_sum / response_length
+    print(np.std(Z))
+    if np.std(Z) != 0:  # skip zero variance questions
+        groups.append(Z)
 
-# # Perform Brown-Forsythe test (center='median')
-# if len(groups) > 0:
-#     stat_bf, p_bf = levene(*groups, center='median')
-#     print(f"Brown-Forsythe statistic: {stat_bf:.6f}")
-#     print(f"Brown-Forsythe global p-value: {p_bf:.6f}")
+# Perform Brown-Forsythe test (center='median')
+if len(groups) > 0:
+    stat_bf, p_bf = levene(*groups, center='median')
+    print(f"Brown-Forsythe statistic: {stat_bf:.6f}")
+    print(f"Brown-Forsythe global p-value: {p_bf:.6f}")
 
-#     alpha = 0.05
-#     if p_bf < alpha:
-#         print("Reject H0: variances differ across questions")
-#     else:
-#         print("Fail to reject H0: supports equal variances across questions")
-# else:
-#     print("No valid Z samples to perform Brown-Forsythe test.")
+    alpha = 0.05
+    if p_bf < alpha:
+        print("Reject H0: variances differ across questions")
+    else:
+        print("Fail to reject H0: supports equal variances across questions")
+else:
+    print("No valid Z samples to perform Brown-Forsythe test.")
 
 
 # ############ O'Brien's Test for Equal Variances ############
