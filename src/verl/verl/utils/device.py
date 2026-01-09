@@ -78,12 +78,20 @@ def get_nccl_backend() -> str:
     Returns:
         nccl backend type string.
     """
+<<<<<<< HEAD
     if is_cuda_available:
         return "nccl"
     elif is_npu_available:
         return "hccl"
     else:
         raise RuntimeError(f"No available nccl backend found on device type {get_device_name()}.")
+=======
+    if is_npu_available:
+        return "hccl"
+    else:
+        # default to nccl
+        return "nccl"
+>>>>>>> rebuttal
 
 
 def set_expandable_segments(enable: bool) -> None:

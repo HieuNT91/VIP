@@ -346,7 +346,11 @@ Remove padding Attention
 
 if is_flash_attn_2_available():
     from flash_attn import flash_attn_varlen_func
+<<<<<<< HEAD
     from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa
+=======
+    from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa: F401
+>>>>>>> rebuttal
 
 
 def apply_rotary_pos_emb_rmpad(q, k, cos, sin, position_ids, indices, sequence_length):

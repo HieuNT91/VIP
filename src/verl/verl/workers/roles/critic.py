@@ -35,6 +35,10 @@ from verl.utils.profiler import DistProfiler, DistProfilerExtension
 from verl.utils.py_functional import append_to_dict
 from verl.workers.config import CriticConfig
 from verl.workers.roles.utils.losses import value_loss
+<<<<<<< HEAD
+=======
+from verl.workers.roles.utils.padding import left_right_2_no_padding, no_padding_2_padding
+>>>>>>> rebuttal
 
 logger = logging.getLogger(__file__)
 logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
@@ -140,13 +144,25 @@ class CriticWorker(Worker, DistProfilerExtension):
         with self.engine.eval_mode():
             # TODO: make worker API to accept TensorDict as well
             data = data.to_tensordict()
+<<<<<<< HEAD
+=======
+            data = left_right_2_no_padding(data)
+>>>>>>> rebuttal
             output = self.engine.infer_batch(data)
 
         if self.engine.is_mp_src_rank_with_outputs():
             # in megatron, only last pp contains valid data and returned to the single controller
             output = output["model_output"]
+<<<<<<< HEAD
             output = DataProto.from_dict(
                 tensors={"values": output["values"].float()},
+=======
+            values = output["values"]
+            values = no_padding_2_padding(values, data)  # (bsz, response_length)
+
+            output = DataProto.from_dict(
+                tensors={"values": values.float()},
+>>>>>>> rebuttal
             )
             output = output.to("cpu")
 
@@ -177,6 +193,10 @@ class CriticWorker(Worker, DistProfilerExtension):
                     mini_batch.meta_info["global_batch_size"] = self.config.ppo_mini_batch_size
                     # TODO: make worker API to accept TensorDict as well
                     mini_batch = mini_batch.to_tensordict()
+<<<<<<< HEAD
+=======
+                    mini_batch = left_right_2_no_padding(mini_batch)
+>>>>>>> rebuttal
                     output = self.engine.train_batch(mini_batch, self.loss_fn)
                     mini_batch_metrics = output.get("metrics", {})
                     append_to_dict(metrics, mini_batch_metrics, prefix="critic/")

@@ -15,6 +15,11 @@ defaults:
   - critic@critic: megatron_critic
   # Reward model config.
   - reward_model@reward_model: megatron_reward_model
+<<<<<<< HEAD
+=======
+  # Rollout correction config.
+  - algorithm@algorithm.rollout_correction: rollout_correction
+>>>>>>> rebuttal
   - _self_
 
 actor_rollout_ref:
@@ -23,7 +28,10 @@ actor_rollout_ref:
   nccl_timeout: 600 # seconds, default is 10 minutes for torch, you can set it to a larger value if you have long-running operations like 32B or 72B model using megatron
 
   model:
+<<<<<<< HEAD
 
+=======
+>>>>>>> rebuttal
     path: ~/models/deepseek-llm-7b-chat
 
     custom_chat_template: null
@@ -167,6 +175,14 @@ global_profiler:
       # devices, record_context etc.
       kw_args: {}
 
+<<<<<<< HEAD
+=======
+# configs for TransferQueue
+transfer_queue:
+  # Whether to enable transfer queue
+  enable: False
+
+>>>>>>> rebuttal
 ray_kwargs:
   ray_init:
     num_cpus: null # `None` means using all CPUs, which might cause hang if limited in systems like SLURM. Please set to a number allowed then.

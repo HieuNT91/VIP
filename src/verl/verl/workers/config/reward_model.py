@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+<<<<<<< HEAD
 import importlib.util
 import os
 import sys
@@ -57,6 +58,17 @@ def get_custome_process_fn(file_path, function_name):
     print(f"using customized reward function '{function_name}' from '{module.__file__}'")
     raw_fn = getattr(module, function_name)
     return raw_fn
+=======
+from dataclasses import dataclass, field
+from typing import Optional
+
+from verl.base_config import BaseConfig
+
+from .model import HFModelConfig
+from .rollout import RolloutConfig
+
+__all__ = ["SandboxFusionConfig", "RewardModelConfig"]
+>>>>>>> rebuttal
 
 
 @dataclass
@@ -75,6 +87,7 @@ class SandboxFusionConfig(BaseConfig):
 
 
 @dataclass
+<<<<<<< HEAD
 class RewardModelDataProcessorConfig(BaseConfig):
     path: Optional[str] = None
     preprocess_fn_name: Optional[str] = None
@@ -107,11 +120,20 @@ class RewardModelConfig(BaseConfig):
     response_length: int = 0
 
     # resource pool config: for colocate / standalone mode
+=======
+class RewardModelConfig(BaseConfig):
+    _mutable_fields = BaseConfig._mutable_fields
+
+    reward_manager: str = "naive"
+
+    enable: bool = False
+>>>>>>> rebuttal
     enable_resource_pool: bool = False
     n_gpus_per_node: int = 0
     nnodes: int = 0
 
     # reward model args
+<<<<<<< HEAD
     dtype: str = "bfloat16"
     gpu_memory_utilization: float = 0.5
     enforce_eager: bool = True
@@ -144,3 +166,8 @@ class RewardModelConfig(BaseConfig):
     model_config: HFModelConfig = field(default_factory=HFModelConfig)
     # Server configuration for sglang server mode
     server_config: ServerConfig = field(default_factory=ServerConfig)
+=======
+    rollout: RolloutConfig = field(default_factory=RolloutConfig)
+    model: HFModelConfig = field(default_factory=HFModelConfig)
+    sandbox_fusion: SandboxFusionConfig = field(default_factory=SandboxFusionConfig)
+>>>>>>> rebuttal

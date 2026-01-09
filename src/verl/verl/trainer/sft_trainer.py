@@ -65,14 +65,22 @@ class SFTTrainer:
 
         self._build_dataloader()
 
+<<<<<<< HEAD
         # Initialize resume-related variables
         self.resume_global_step = 0
 
+=======
+>>>>>>> rebuttal
         self._init_engine()
 
         self._build_ckpt_handler()
 
+<<<<<<< HEAD
         self.ckpt_handler.load_checkpoint()
+=======
+        # Initialize resume-related variables
+        self.resume_global_step = self.ckpt_handler.load_checkpoint()
+>>>>>>> rebuttal
 
         self.device_name = self.config.trainer.device
 
@@ -145,8 +153,20 @@ class SFTTrainer:
     def _build_dataset(self):
         config = self.config
         tokenizer = self.model_config.tokenizer
+<<<<<<< HEAD
         train_dataset = create_sft_dataset(config.data.train_files, config.data, tokenizer)
         val_dataset = create_sft_dataset(config.data.val_files, config.data, tokenizer)
+=======
+        train_dataset = create_sft_dataset(
+            config.data.train_files, config.data, tokenizer, max_samples=config.data.get("train_max_samples", -1)
+        )
+        if config.data.val_files:
+            val_dataset = create_sft_dataset(
+                config.data.val_files, config.data, tokenizer, max_samples=config.data.get("val_max_samples", -1)
+            )
+        else:
+            val_dataset = None
+>>>>>>> rebuttal
 
         self.train_dataset, self.val_dataset = train_dataset, val_dataset
 
@@ -181,6 +201,7 @@ class SFTTrainer:
             pin_memory_device=device_name,
         )
 
+<<<<<<< HEAD
         self.val_sampler = DistributedSampler(
             self.val_dataset, shuffle=False, num_replicas=dp_size, rank=dp_rank, drop_last=True
         )
@@ -194,6 +215,24 @@ class SFTTrainer:
             drop_last=True,
             pin_memory_device=device_name,
         )
+=======
+        if self.val_dataset:
+            self.val_sampler = DistributedSampler(
+                self.val_dataset, shuffle=False, num_replicas=dp_size, rank=dp_rank, drop_last=True
+            )
+            self.val_dataloader = StatefulDataLoader(
+                dataset=self.val_dataset,
+                batch_size=self.train_batch_size_per_dp,
+                sampler=self.val_sampler,
+                collate_fn=self.collate_fn,
+                num_workers=8,
+                pin_memory=True,
+                drop_last=True,
+                pin_memory_device=device_name,
+            )
+        else:
+            self.val_dataloader = None
+>>>>>>> rebuttal
 
     def fit(self):
         is_logging = self.engine.is_mp_src_rank_with_outputs() and self.engine.get_data_parallel_rank() == 0
@@ -242,6 +281,10 @@ class SFTTrainer:
         }
 
         train_time = 0
+<<<<<<< HEAD
+=======
+        total_tokens = 0
+>>>>>>> rebuttal
         for epoch in range(start_epoch, self.config.trainer.total_epochs):
             self.train_sampler.set_epoch(epoch=epoch)
 
@@ -267,7 +310,11 @@ class SFTTrainer:
                 if self.engine.is_mp_src_rank_with_outputs():
                     metrics = output["metrics"]
 
+<<<<<<< HEAD
                     loss = torch.mean(torch.tensor(metrics["loss"], device=self.device_name))
+=======
+                    loss = torch.sum(torch.tensor(metrics["loss"], device=self.device_name))
+>>>>>>> rebuttal
 
                     # mean over dp group
                     is_nested = data["input_ids"].is_nested
@@ -302,6 +349,11 @@ class SFTTrainer:
                     metrics["train/grad_norm"] = metrics.pop("grad_norm")
                     metrics["train/lr"] = lr
                     metrics["train/global_tokens"] = output_tensor.sum().item()
+<<<<<<< HEAD
+=======
+                    total_tokens += metrics["train/global_tokens"]
+                    metrics["train/total_tokens(B)"] = total_tokens / 1e9
+>>>>>>> rebuttal
                     # mfu
                     delta_time = timer.last
                     estimated_flops, promised_flops = self.flops_counter.estimate_flops(batch_seqlens, delta_time)
@@ -315,7 +367,11 @@ class SFTTrainer:
                 is_save_step = global_step % self.save_freq == 0
 
                 # early exit or validation step
+<<<<<<< HEAD
                 if is_last_step or (self.test_freq > 0 and is_valid_step):
+=======
+                if is_last_step and self.val_dataloader is not None or (self.test_freq > 0 and is_valid_step):
+>>>>>>> rebuttal
                     # Perform validation
                     val_losses = []
                     for val_data in self.val_dataloader:
@@ -363,7 +419,11 @@ def main(config):
     run_sft(config)
 
 
+<<<<<<< HEAD
 def create_sft_dataset(data_paths, data_config, tokenizer):
+=======
+def create_sft_dataset(data_paths, data_config, tokenizer, max_samples=-1):
+>>>>>>> rebuttal
     """Create a dataset."""
     # build dataset
     # First check if a custom dataset class is specified
@@ -376,7 +436,11 @@ def create_sft_dataset(data_paths, data_config, tokenizer):
         dataset_cls = MultiTurnSFTDataset
 
     # Create datasets based on the selected class
+<<<<<<< HEAD
     dataset = dataset_cls(parquet_files=data_paths, tokenizer=tokenizer, config=data_config)
+=======
+    dataset = dataset_cls(parquet_files=data_paths, tokenizer=tokenizer, config=data_config, max_samples=max_samples)
+>>>>>>> rebuttal
     return dataset
 
 

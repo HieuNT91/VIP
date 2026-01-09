@@ -80,6 +80,12 @@ class HFModelConfig(BaseConfig):
     target_modules: Optional[str] = "all-linear"
 
     exclude_modules: Optional[str] = None
+<<<<<<< HEAD
+=======
+
+    # path to pre-trained LoRA adapter to load for continued training
+    lora_adapter_path: Optional[str] = None
+>>>>>>> rebuttal
     use_liger: bool = False
 
     use_fused_kernels: bool = False

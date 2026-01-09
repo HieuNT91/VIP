@@ -9,7 +9,11 @@ torch==2.7.1
 flash_attn=2.8.0    ##
 sglang==0.4.8
 vllm==0.8.5.post1
+<<<<<<< HEAD
 vidia-cudnn-cu12==9.8.0.87
+=======
+nvidia-cudnn-cu12==9.8.0.87
+>>>>>>> rebuttal
 transformer_engine==2.3
 megatron.core==core_v0.12.2
 # Preview

@@ -28,8 +28,13 @@ megatron:
   # Number of GPUs in expert model parallel group
   expert_model_parallel_size: 1
 
+<<<<<<< HEAD
   # Expert tensor parallel size
   expert_tensor_parallel_size: 1
+=======
+  # Expert tensor parallel size (null to be same as TP)
+  expert_tensor_parallel_size: null
+>>>>>>> rebuttal
 
   # Number of pipeline model parallel stages
   pipeline_model_parallel_size: 1
@@ -61,5 +66,10 @@ megatron:
   # Whether to use mbridge for faster comms
   use_mbridge: ${oc.select:actor_rollout_ref.actor.megatron.use_mbridge,False}
 
+<<<<<<< HEAD
+=======
+  dtype: bfloat16
+
+>>>>>>> rebuttal
 # Whether to load weights (default True)
 load_weight: True

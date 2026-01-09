@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import asyncio
+<<<<<<< HEAD
+=======
+import dataclasses
+>>>>>>> rebuttal
 import logging
 import os
 from typing import Any, Optional
@@ -33,10 +37,18 @@ from sglang.srt.managers.io_struct import (
     ReleaseMemoryOccupationReqInput,
     ResumeMemoryOccupationReqInput,
 )
+<<<<<<< HEAD
 
 from verl.single_controller.ray import RayClassWithInitArgs
 from verl.utils.config import omega_conf_to_dataclass
 from verl.workers.config import HFModelConfig, RewardModelConfig, RolloutConfig
+=======
+from sglang.srt.managers.tokenizer_manager import ServerStatus
+
+from verl.single_controller.ray import RayClassWithInitArgs
+from verl.utils.config import omega_conf_to_dataclass
+from verl.workers.config import HFModelConfig, RolloutConfig
+>>>>>>> rebuttal
 from verl.workers.rollout.replica import RolloutMode, RolloutReplica, TokenOutput
 from verl.workers.rollout.sglang_rollout.sglang_rollout import ServerAdapter, _set_envs_and_config
 from verl.workers.rollout.utils import get_free_port, is_valid_ipv6_address, run_unvicorn
@@ -63,7 +75,11 @@ class SGLangHttpServer:
 
     def __init__(
         self,
+<<<<<<< HEAD
         config: RolloutConfig | RewardModelConfig,
+=======
+        config: RolloutConfig,
+>>>>>>> rebuttal
         model_config: HFModelConfig,
         rollout_mode: RolloutMode,
         workers: list[ActorHandle],
@@ -76,7 +92,11 @@ class SGLangHttpServer:
         os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visible_devices
         assert torch.cuda.is_available(), "SGLang http server should run on GPU node"
 
+<<<<<<< HEAD
         self.config: RolloutConfig | RewardModelConfig = omega_conf_to_dataclass(config)
+=======
+        self.config: RolloutConfig = omega_conf_to_dataclass(config)
+>>>>>>> rebuttal
         self.model_config: HFModelConfig = omega_conf_to_dataclass(model_config, dataclass_type=HFModelConfig)
         self.config.max_model_len = self.config.prompt_length + self.config.response_length
         self.rollout_mode = rollout_mode
@@ -150,14 +170,42 @@ class SGLangHttpServer:
             "mm_attention_backend": "fa3",
             "attention_backend": attention_backend if attention_backend is not None else "fa3",
             "skip_tokenizer_init": self.config.skip_tokenizer_init,
+<<<<<<< HEAD
         }
 
+=======
+            "skip_server_warmup": True,
+            **engine_kwargs,
+        }
+
+        if self.config.prometheus.enable:
+            if self.config.prometheus.served_model_name:
+                # Extract model name from path if it's a full path
+                served_model_name = self.config.prometheus.served_model_name
+                if "/" in served_model_name:
+                    # If it's a full path, extract the last part as model name
+                    served_model_name = served_model_name.split("/")[-1]
+                args["served_model_name"] = served_model_name
+
+            # start sglang metrics
+            args["enable_metrics"] = True
+
+        # enable_weights_cpu_backup is supported in sglang>=0.5.3
+        if "enable_weights_cpu_backup" in [f.name for f in dataclasses.fields(ServerArgs)]:
+            enable_weights_cpu_backup = True if self.rollout_mode == RolloutMode.COLOCATED else False
+            args["enable_weights_cpu_backup"] = enable_weights_cpu_backup
+
+>>>>>>> rebuttal
         # NOTE: We can't directly call SGLang's launch_server since it's not an async function.
         # https://github.com/sgl-project/sglang/blob/main/python/sglang/srt/entrypoints/http_server.py
         sglang.srt.entrypoints.engine._set_envs_and_config = _set_envs_and_config
         os.environ["SGLANG_BLOCK_NONZERO_RANK_CHILDREN"] = "0"
         server_args = ServerArgs(**args)
+<<<<<<< HEAD
         self.tokenizer_manager, self.template_manager, self.scheduler_info = _launch_subprocesses(
+=======
+        self.tokenizer_manager, self.template_manager, self.scheduler_info, *_ = _launch_subprocesses(
+>>>>>>> rebuttal
             server_args=server_args
         )
 
@@ -173,7 +221,14 @@ class SGLangHttpServer:
             )
         )
         app.is_single_tokenizer_mode = True
+<<<<<<< HEAD
         self._server_port, self._server_task = await run_unvicorn(app, server_args, self._server_address)
+=======
+        app.server_args = server_args
+        app.warmup_thread_args = (server_args, None, None)
+        self._server_port, self._server_task = await run_unvicorn(app, server_args, self._server_address)
+        self.tokenizer_manager.server_status = ServerStatus.Up
+>>>>>>> rebuttal
 
     async def wake_up(self):
         if self.rollout_mode == RolloutMode.HYBRID:
@@ -268,13 +323,25 @@ class SGLangReplica(RolloutReplica):
                 worker_cuda_visible_devices[node_rank * self.gpus_per_node : (node_rank + 1) * self.gpus_per_node]
             )
             node_id = worker_node_ids[node_rank * self.gpus_per_node]
+<<<<<<< HEAD
+=======
+            name = (
+                f"sglang_server_{self.replica_rank}_{node_rank}"
+                if not self.is_reward_model
+                else f"sglang_server_reward_{self.replica_rank}_{node_rank}"
+            )
+>>>>>>> rebuttal
             server = SGLangHttpServer.options(
                 scheduling_strategy=ray.util.scheduling_strategies.NodeAffinitySchedulingStrategy(
                     node_id=node_id,
                     soft=False,
                 ),
                 runtime_env={"env_vars": {"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES": "1"}},
+<<<<<<< HEAD
                 name=f"sglang_server_{self.replica_rank}_{node_rank}",
+=======
+                name=name,
+>>>>>>> rebuttal
             ).remote(
                 config=self.config,
                 model_config=self.model_config,
@@ -299,4 +366,12 @@ class SGLangReplica(RolloutReplica):
         # get http server address from first server
         server_address, server_port = await self.servers[0].get_server_address.remote()
         self._server_handle = self.servers[0]
+<<<<<<< HEAD
         self._server_address = f"{server_address}:{server_port}"
+=======
+        self._server_address = (
+            f"[{server_address}]:{server_port}"
+            if is_valid_ipv6_address(server_address)
+            else f"{server_address}:{server_port}"
+        )
+>>>>>>> rebuttal

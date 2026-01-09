@@ -15,7 +15,10 @@
 The main entry point to run the PPO algorithm
 """
 
+<<<<<<< HEAD
 import asyncio
+=======
+>>>>>>> rebuttal
 import datetime
 import json
 import logging
@@ -85,7 +88,13 @@ from verl.utils.model import compute_position_id_with_mask, convert_weight_keys
 from verl.utils.profiler import DistProfiler, DistProfilerExtension, ProfilerConfig, log_gpu_memory_usage, simple_timer
 from verl.utils.profiler.performance import reduce_timing, topk_reduce_ratio_min_max
 from verl.utils.py_functional import convert_to_regular_types
+<<<<<<< HEAD
 from verl.workers.config import FSDPCriticConfig, FSDPEngineConfig, HFModelConfig, RolloutConfig
+=======
+from verl.utils.ray_utils import get_event_loop
+from verl.workers.config import FSDPCriticConfig, FSDPEngineConfig, HFModelConfig, RolloutConfig
+from verl.workers.config.optimizer import build_optimizer
+>>>>>>> rebuttal
 from verl.workers.rollout import get_rollout_class
 from verl.workers.sharding_manager.fsdp_ulysses import FSDPUlyssesShardingManager
 
@@ -178,7 +187,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
         self.ulysses_sharding_manager = FSDPUlyssesShardingManager(self.ulysses_device_mesh)
         self._lora_rank = self.config.model.get("lora_rank", 0)
+<<<<<<< HEAD
         self._is_lora = self._lora_rank > 0
+=======
+        self._is_lora = self.config.model.get("lora_adapter_path") is not None or self._lora_rank > 0
+>>>>>>> rebuttal
 
         self.role = role
         assert self.role in ["actor", "rollout", "ref", "actor_rollout", "actor_rollout_ref"]
@@ -279,7 +292,10 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         role="actor",
         enable_activation_offload=False,
     ):
+<<<<<<< HEAD
         from torch import optim
+=======
+>>>>>>> rebuttal
         from torch.distributed.fsdp import CPUOffload, MixedPrecision
         from transformers import (
             AutoConfig,
@@ -315,8 +331,14 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             torch_dtype = PrecisionType.to_dtype(torch_dtype)
 
         # override model kwargs
+<<<<<<< HEAD
         actor_model_config = AutoConfig.from_pretrained(
             local_path, trust_remote_code=trust_remote_code, attn_implementation="flash_attention_2"
+=======
+        attn_implementation = override_model_config.get("attn_implementation", "flash_attention_2")
+        actor_model_config = AutoConfig.from_pretrained(
+            local_path, trust_remote_code=trust_remote_code, attn_implementation=attn_implementation
+>>>>>>> rebuttal
         )
         # TODO: VL models use VisionAttention, which directly uses flash_attention in transformers>=4.53
         # which will be patched by _ulysses_flash_attention_forward, but errorly misses position_ids
@@ -378,6 +400,10 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 torch_dtype=torch_dtype,
                 config=actor_model_config,
                 trust_remote_code=trust_remote_code,
+<<<<<<< HEAD
+=======
+                attn_implementation=attn_implementation,
+>>>>>>> rebuttal
             )
 
             # Apply Liger kernel to the model if use_liger is set to True
@@ -404,9 +430,33 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
             if enable_gradient_checkpointing:
                 actor_module.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+<<<<<<< HEAD
             if self._is_lora:
                 print("Applying LoRA to actor module")
                 actor_module.enable_input_require_grads()
+=======
+
+        if self._is_lora:
+            print("Applying LoRA to actor module")
+            actor_module.enable_input_require_grads()
+
+            lora_adapter_path = self.config.model.get("lora_adapter_path")
+            if lora_adapter_path is not None:
+                from peft import PeftModel
+
+                print(f"Loading pre-trained LoRA adapter to {role} from: {lora_adapter_path}")
+
+                # Copy adapter to local if needed
+                local_adapter_path = copy_to_local(lora_adapter_path, use_shm=self.config.model.get("use_shm", False))
+
+                actor_module = PeftModel.from_pretrained(actor_module, local_adapter_path, is_trainable=True)
+                peft_config = actor_module.peft_config["default"]
+                # Ensure task_type is TaskType enum, not string
+                if isinstance(peft_config.task_type, str):
+                    peft_config.task_type = TaskType.CAUSAL_LM
+
+            else:
+>>>>>>> rebuttal
                 # Convert config to regular Python types before creating PEFT model
                 lora_config = {
                     "task_type": TaskType.CAUSAL_LM,
@@ -444,7 +494,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             reduce_dtype = PrecisionType.to_dtype(mixed_precision_config.get("reduce_dtype", "fp32"))
             buffer_dtype = PrecisionType.to_dtype(mixed_precision_config.get("buffer_dtype", "fp32"))
         else:
+<<<<<<< HEAD
             param_dtype = torch.bfloat16
+=======
+            param_dtype = PrecisionType.to_dtype(fsdp_config.dtype)
+>>>>>>> rebuttal
             reduce_dtype = torch.float32
             buffer_dtype = torch.float32
 
@@ -453,7 +507,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         auto_wrap_policy = get_fsdp_wrap_policy(
             module=actor_module,
             config=fsdp_config.get("wrap_policy", None),
+<<<<<<< HEAD
             is_lora=self.config.model.get("lora_rank", 0) > 0,
+=======
+            is_lora=self._is_lora,
+>>>>>>> rebuttal
         )
 
         if self._is_rollout and self.config.rollout.name == "hf":
@@ -520,6 +578,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         if role == "actor" and optim_config is not None:
             from verl.utils.torch_functional import get_constant_schedule_with_warmup, get_cosine_schedule_with_warmup
 
+<<<<<<< HEAD
             actor_optimizer = optim.AdamW(
                 actor_module_fsdp.parameters(),
                 lr=optim_config.lr,
@@ -530,6 +589,13 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             total_steps = optim_config.get("total_training_steps", 0)
             num_warmup_steps = int(optim_config.get("lr_warmup_steps", -1))
             warmup_style = optim_config.get("warmup_style", "constant")
+=======
+            actor_optimizer = build_optimizer(actor_module_fsdp.parameters(), optim_config)
+
+            total_steps = optim_config.get("total_training_steps", 0)
+            num_warmup_steps = int(optim_config.get("lr_warmup_steps", -1))
+            lr_scheduler_type = optim_config.get("lr_scheduler_type", "constant")
+>>>>>>> rebuttal
             min_lr_ratio = optim_config.get("min_lr_ratio", 0.0)
             num_cycles = optim_config.get("num_cycles", 0.5)
             if num_warmup_steps < 0:
@@ -539,11 +605,19 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             if self.rank == 0:
                 print(f"Total steps: {total_steps}, num_warmup_steps: {num_warmup_steps}")
 
+<<<<<<< HEAD
             if warmup_style == "constant":
                 actor_lr_scheduler = get_constant_schedule_with_warmup(
                     optimizer=actor_optimizer, num_warmup_steps=num_warmup_steps
                 )
             elif warmup_style == "cosine":
+=======
+            if lr_scheduler_type == "constant":
+                actor_lr_scheduler = get_constant_schedule_with_warmup(
+                    optimizer=actor_optimizer, num_warmup_steps=num_warmup_steps
+                )
+            elif lr_scheduler_type == "cosine":
+>>>>>>> rebuttal
                 actor_lr_scheduler = get_cosine_schedule_with_warmup(
                     optimizer=actor_optimizer,
                     num_warmup_steps=num_warmup_steps,
@@ -552,7 +626,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                     num_cycles=num_cycles,
                 )
             else:
+<<<<<<< HEAD
                 raise NotImplementedError(f"Warmup style {warmup_style} is not supported")
+=======
+                raise NotImplementedError(f"LR scheduler type {lr_scheduler_type} is not supported")
+>>>>>>> rebuttal
 
             log_gpu_memory_usage(f"After {role} optimizer init", logger=logger)
         else:
@@ -571,19 +649,37 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
         # 2. build rollout device mesh
         infer_tp = self.config.rollout.tensor_model_parallel_size * self.config.rollout.data_parallel_size
+<<<<<<< HEAD
         dp = self.world_size // infer_tp
         assert self.world_size % infer_tp == 0, (
             f"rollout world_size: {self.world_size} is not divisible by infer_tp: {infer_tp}"
         )
         rollout_device_mesh = init_device_mesh(
             device_name, mesh_shape=(dp, infer_tp), mesh_dim_names=["dp", "infer_tp"]
+=======
+        infer_pp = self.config.rollout.pipeline_model_parallel_size
+        infer_world_size = infer_tp * infer_pp
+        dp = self.world_size // infer_world_size
+        assert self.world_size % infer_world_size == 0, (
+            f"rollout world_size: {self.world_size} is not divisible by infer_world_size: {infer_world_size}"
+        )
+        rollout_device_mesh = init_device_mesh(
+            device_name, mesh_shape=(dp, infer_tp, infer_pp), mesh_dim_names=["dp", "infer_tp", "infer_pp"]
+>>>>>>> rebuttal
         )
         rollout_name = self.config.rollout.name
 
         if rollout_name == "hf":
             self._register_dispatch_collect_info("rollout", dp_rank=self.rank, is_collect=True)
         else:
+<<<<<<< HEAD
             is_collect = rollout_device_mesh["infer_tp"].get_local_rank() == 0
+=======
+            is_collect = (
+                rollout_device_mesh["infer_tp"].get_local_rank() == 0
+                and rollout_device_mesh["infer_pp"].get_local_rank() == 0
+            )
+>>>>>>> rebuttal
             self._register_dispatch_collect_info(
                 "rollout", dp_rank=rollout_device_mesh["dp"].get_local_rank(), is_collect=is_collect
             )
@@ -625,7 +721,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         # For sync mode, we directly switch to trainer mode here.
         # For async mode, we can't call run_until_complete here, so we will switch to trainer mode in AgentLoopManager.
         if rollout_config.mode == "sync" and self._is_actor:
+<<<<<<< HEAD
             loop = asyncio.get_event_loop()
+=======
+            loop = get_event_loop()
+>>>>>>> rebuttal
             loop.run_until_complete(self.trainer_mode())
 
     async def rollout_mode(self):
@@ -678,7 +778,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         set_expandable_segments(False)
 
         if peft_config is not None and self.base_sync_done:
+<<<<<<< HEAD
             per_tensor_param = params
+=======
+            per_tensor_param = params.items() if isinstance(params, dict) else params  # Fixed: handle dict case
+>>>>>>> rebuttal
         else:
             device = get_device_id()  # used when fsdp2 set cpu_offload_policy
             per_tensor_param = (
@@ -866,7 +970,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             metrics["perf/cpu_memory_used_gb"] = psutil.virtual_memory().used / (1024**3)
 
             lr = self.actor_lr_scheduler.get_last_lr()[0]
+<<<<<<< HEAD
             metrics["actor/lr"] = lr
+=======
+            metrics["actor/lr"] = lr.item() if torch.is_tensor(lr) else lr
+>>>>>>> rebuttal
             self.actor_lr_scheduler.step()
 
             # TODO: here, we should return all metrics
@@ -902,7 +1010,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
         timing_generate = {}
         if self._is_actor:  # For rollout only, we do not switch context.
+<<<<<<< HEAD
             loop = asyncio.get_event_loop()
+=======
+            loop = get_event_loop()
+>>>>>>> rebuttal
             loop.run_until_complete(self.rollout_mode())
             log_gpu_memory_usage("After switch to rollout mode", logger=logger)
 
@@ -1066,6 +1178,17 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             f"{self._is_actor} and {self._is_rollout}"
         )
 
+<<<<<<< HEAD
+=======
+        # No checkpoint to load, just offload the model and optimizer to CPU
+        if local_path is None:
+            if self._is_offload_param:
+                offload_fsdp_model_to_cpu(self.actor_module_fsdp)
+            if self._is_offload_optimizer:
+                offload_fsdp_optimizer(self.actor_optimizer)
+            return
+
+>>>>>>> rebuttal
         if self._is_offload_param:
             load_fsdp_model_to_gpu(self.actor_module_fsdp)
 
@@ -1182,12 +1305,21 @@ class CriticWorker(Worker, DistProfilerExtension):
                 f"normalized ppo_mini_batch_size {self.config.ppo_mini_batch_size} should be larger than "
                 f"ppo_micro_batch_size_per_gpu {self.config.ppo_micro_batch_size_per_gpu}"
             )
+<<<<<<< HEAD
         self._is_lora = self.config.model.get("lora_rank", 0) > 0
+=======
+        self._is_lora = (
+            self.config.model.get("lora_adapter_path") is not None or self.config.model.get("lora_rank", 0) > 0
+        )
+>>>>>>> rebuttal
         self.use_orig_params = self.config.model.fsdp_config.get("use_orig_params", False)
 
     def _build_critic_model_optimizer(self, config):
         # the following line is necessary
+<<<<<<< HEAD
         from torch import optim
+=======
+>>>>>>> rebuttal
         from torch.distributed.fsdp import MixedPrecision
 
         from verl.utils.model import load_valuehead_model, print_model_size
@@ -1222,9 +1354,17 @@ class CriticWorker(Worker, DistProfilerExtension):
 
         from transformers import AutoConfig
 
+<<<<<<< HEAD
         critic_model_config = AutoConfig.from_pretrained(
             local_path,
             attn_implementation="flash_attention_2",
+=======
+        # override model kwargs
+        attn_implementation = override_config.get("attn_implementation", "flash_attention_2")
+        critic_model_config = AutoConfig.from_pretrained(
+            local_path,
+            attn_implementation=attn_implementation,
+>>>>>>> rebuttal
             trust_remote_code=config.model.get("trust_remote_code", False),
         )
         # TODO: VL models use VisionAttention, which directly uses flash_attention in transformers>=4.53
@@ -1272,6 +1412,7 @@ class CriticWorker(Worker, DistProfilerExtension):
         if self._is_lora:
             print("Applying LoRA to critic module")
             critic_module.enable_input_require_grads()
+<<<<<<< HEAD
             # Convert config to regular Python types before creating PEFT model
             lora_config = {
                 "task_type": TaskType.CAUSAL_LM,
@@ -1281,6 +1422,35 @@ class CriticWorker(Worker, DistProfilerExtension):
                 "bias": "none",
             }
             critic_module = get_peft_model(critic_module, LoraConfig(**lora_config))
+=======
+
+            # Check if we should load a pre-trained LoRA adapter
+            lora_adapter_path = self.config.model.get("lora_adapter_path")
+            if lora_adapter_path is not None:
+                from peft import PeftModel
+
+                print(f"Loading pre-trained LoRA adapter to critic from: {lora_adapter_path}")
+
+                # Copy adapter to local if needed
+                local_adapter_path = copy_to_local(lora_adapter_path, use_shm=self.config.model.get("use_shm", False))
+
+                critic_module = PeftModel.from_pretrained(critic_module, local_adapter_path, is_trainable=True)
+                peft_config = critic_module.peft_config["default"]
+                # Ensure task_type is TaskType enum, not string
+                if isinstance(peft_config.task_type, str):
+                    peft_config.task_type = TaskType.CAUSAL_LM
+
+            else:
+                # Convert config to regular Python types before creating PEFT model
+                lora_config = {
+                    "task_type": TaskType.CAUSAL_LM,
+                    "r": self.config.model.lora_rank,
+                    "lora_alpha": self.config.model.lora_alpha,
+                    "target_modules": convert_to_regular_types(self.config.model.target_modules),
+                    "bias": "none",
+                }
+                critic_module = get_peft_model(critic_module, LoraConfig(**lora_config))
+>>>>>>> rebuttal
 
         if self.rank == 0:
             print_model_size(critic_module)
@@ -1303,7 +1473,11 @@ class CriticWorker(Worker, DistProfilerExtension):
         auto_wrap_policy = get_fsdp_wrap_policy(
             module=critic_module,
             config=self.config.model.fsdp_config.wrap_policy,
+<<<<<<< HEAD
             is_lora=self.config.model.get("lora_rank", 0) > 0,
+=======
+            is_lora=self._is_lora,
+>>>>>>> rebuttal
         )
 
         log_gpu_memory_usage("Before critic FSDP", logger=None)
@@ -1368,6 +1542,7 @@ class CriticWorker(Worker, DistProfilerExtension):
 
         log_gpu_memory_usage("After critic FSDP", logger=None)
 
+<<<<<<< HEAD
         critic_optimizer = optim.AdamW(
             critic_module.parameters(),
             lr=config.optim.lr,
@@ -1378,6 +1553,14 @@ class CriticWorker(Worker, DistProfilerExtension):
         total_steps = config.optim.get("total_training_steps", 0)
         num_warmup_steps = int(config.optim.get("lr_warmup_steps", -1))
         warmup_style = config.optim.get("warmup_style", "constant")
+=======
+        critic_optimizer = build_optimizer(critic_module.parameters(), config.optim)
+
+        total_steps = config.optim.get("total_training_steps", 0)
+        num_warmup_steps = int(config.optim.get("lr_warmup_steps", -1))
+
+        lr_scheduler_type = config.optim.get("lr_scheduler_type", "constant")
+>>>>>>> rebuttal
         if num_warmup_steps < 0:
             num_warmup_steps_ratio = config.optim.get("lr_warmup_steps_ratio", 0.0)
             num_warmup_steps = int(num_warmup_steps_ratio * total_steps)
@@ -1387,11 +1570,19 @@ class CriticWorker(Worker, DistProfilerExtension):
 
         from verl.utils.torch_functional import get_constant_schedule_with_warmup, get_cosine_schedule_with_warmup
 
+<<<<<<< HEAD
         if warmup_style == "constant":
             critic_lr_scheduler = get_constant_schedule_with_warmup(
                 optimizer=critic_optimizer, num_warmup_steps=num_warmup_steps
             )
         elif warmup_style == "cosine":
+=======
+        if lr_scheduler_type == "constant":
+            critic_lr_scheduler = get_constant_schedule_with_warmup(
+                optimizer=critic_optimizer, num_warmup_steps=num_warmup_steps
+            )
+        elif lr_scheduler_type == "cosine":
+>>>>>>> rebuttal
             min_lr_ratio = config.optim.get("min_lr_ratio", 0.0)
             num_cycles = config.optim.get("num_cycles", 0.5)
             critic_lr_scheduler = get_cosine_schedule_with_warmup(
@@ -1402,7 +1593,11 @@ class CriticWorker(Worker, DistProfilerExtension):
                 num_cycles=num_cycles,
             )
         else:
+<<<<<<< HEAD
             raise NotImplementedError(f"Warmup style {warmup_style} is not supported")
+=======
+            raise NotImplementedError(f"LR scheduler type {lr_scheduler_type} is not supported")
+>>>>>>> rebuttal
 
         return critic_module, critic_optimizer, critic_lr_scheduler
 

@@ -10,7 +10,11 @@ flash_attn=2.8.0    ##
 sglang==0.4.8
 transformer_engine==2.5
 megatron.core==core_r0.13.0
+<<<<<<< HEAD
 vidia-cudnn-cu12==9.8.0.87
+=======
+nvidia-cudnn-cu12==9.8.0.87
+>>>>>>> rebuttal
 ```
 
 ## Target

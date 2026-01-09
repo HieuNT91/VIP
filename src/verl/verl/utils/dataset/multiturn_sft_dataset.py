@@ -29,8 +29,11 @@ from transformers import PreTrainedTokenizer
 from verl.utils import hf_tokenizer
 from verl.utils.dataset.dataset_utils import DatasetPadMode
 from verl.utils.fs import copy_local_path_from_hdfs
+<<<<<<< HEAD
 from verl.utils.model import compute_position_id_with_mask
 from verl.utils.torch_functional import pad_sequence_to_length, postprocess_data
+=======
+>>>>>>> rebuttal
 
 
 def convert_nested_value_to_list_recursive(data_item):
@@ -51,25 +54,43 @@ class MultiTurnSFTDataset(Dataset):
     Dataset for multi-turn conversations where each assistant response should be trained
     """
 
+<<<<<<< HEAD
     def __init__(self, parquet_files: str | list[str], tokenizer, config=None):
         # Set defaults and extract parameters from config if provided
         config = config or {}
         self.pad_mode = config.get("pad_mode", "right")
         assert self.pad_mode in ["right", "left_right", "no_padding"], (
             f"Expect pad_mode to be 'right', 'left_right' or 'no_padding'. Got {self.pad_mode}"
+=======
+    def __init__(self, parquet_files: str | list[str], tokenizer, config=None, max_samples: int = -1):
+        # Set defaults and extract parameters from config if provided
+        config = config or {}
+        self.pad_mode = config.get("pad_mode", "right")
+        assert self.pad_mode in ["right", "no_padding"], (
+            f"Expect pad_mode to be 'right' or 'no_padding'. Got {self.pad_mode}"
+>>>>>>> rebuttal
         )
         self.truncation = config.get("truncation", "error")
         # for right padding
         self.max_length = config.get("max_length", 1024)
+<<<<<<< HEAD
         # for left right paddding to be consistent with RL
         self.max_prompt_length = config.get("max_prompt_length", 512)
         self.max_response_length = config.get("max_response_length", 512)
+=======
+>>>>>>> rebuttal
         # Get messages_key from the new multiturn config structure
         multiturn_config = config.get("multiturn", {})
         self.messages_key = multiturn_config.get("messages_key", "messages")
         self.tools_key = multiturn_config.get("tools_key", "tools")
         self.enable_thinking_key = multiturn_config.get("enable_thinking_key", "enable_thinking")
         self.apply_chat_template_kwargs = config.get("apply_chat_template_kwargs", {})
+<<<<<<< HEAD
+=======
+        self.shuffle = config.get("shuffle", False)
+        self.seed = config.get("seed")
+        self.max_samples = max_samples
+>>>>>>> rebuttal
         assert self.truncation in ["error", "left", "right"]
 
         if not isinstance(parquet_files, list | ListConfig):
@@ -102,8 +123,26 @@ class MultiTurnSFTDataset(Dataset):
             dataframes.append(dataframe)
         self.dataframe = pd.concat(dataframes)
 
+<<<<<<< HEAD
         # Extract messages list from dataframe
         self.messages = self.dataframe[self.messages_key].apply(series_to_item).tolist()
+=======
+        total = len(self.dataframe)
+        print(f"dataset len: {len(self.dataframe)}")
+
+        if self.max_samples > 0 and self.max_samples < total:
+            if self.shuffle:
+                rngs_args = (self.seed,) if self.seed is not None else ()
+                rng = np.random.default_rng(*rngs_args)
+                indices = rng.choice(total, size=self.max_samples, replace=False)
+            else:
+                indices = np.arange(self.max_samples)
+            self.dataframe = self.dataframe.iloc[indices.tolist()]
+            print(f"selected {self.max_samples} random samples out of {total}")
+
+        # Extract messages list from dataframe
+        self.messages = self.dataframe[self.messages_key].apply(convert_nested_value_to_list_recursive).tolist()
+>>>>>>> rebuttal
 
         # Extract tools list from dataframe
         if self.tools_key in self.dataframe.columns:
@@ -320,10 +359,15 @@ class MultiTurnSFTDataset(Dataset):
         if messages[0]["role"] == "system":
             assert messages[1]["role"] == "user"
             assert messages[2]["role"] == "assistant"
+<<<<<<< HEAD
             prompt_message_length = 2
         elif messages[0]["role"] == "user":
             assert messages[1]["role"] == "assistant"
             prompt_message_length = 1
+=======
+        elif messages[0]["role"] == "user":
+            assert messages[1]["role"] == "assistant"
+>>>>>>> rebuttal
         else:
             raise ValueError(f"Unknown role: {messages[0]['role']}")
 
@@ -365,6 +409,7 @@ class MultiTurnSFTDataset(Dataset):
                 "position_ids": position_ids,
                 "loss_mask": loss_mask,
             }
+<<<<<<< HEAD
         elif self.pad_mode == DatasetPadMode.LEFT_RIGHT:
             assert self.truncation == "error", "Only support error truncation for left_right pad mode"
             prompt_str = self.tokenizer.apply_chat_template(
@@ -427,6 +472,8 @@ class MultiTurnSFTDataset(Dataset):
                 "responses": response_ids,
                 "response_mask": response_loss_mask,
             }
+=======
+>>>>>>> rebuttal
         elif self.pad_mode == DatasetPadMode.NO_PADDING:
             # truncate input_ids if it is longer than max_length
             if len(input_ids) > self.max_length:
@@ -440,3 +487,8 @@ class MultiTurnSFTDataset(Dataset):
                 "position_ids": position_ids,
                 "loss_mask": loss_mask,
             }
+<<<<<<< HEAD
+=======
+        else:
+            raise ValueError(f"Unknown pad mode {self.pad_mode}")
+>>>>>>> rebuttal

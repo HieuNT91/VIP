@@ -24,7 +24,12 @@ import torch
 
 from verl.utils.device import get_torch_device, is_cuda_available
 
+<<<<<<< HEAD
 logger = logging.getLogger(__name__)
+=======
+logger = logging.getLogger(__file__)
+logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
+>>>>>>> rebuttal
 
 
 def aggressive_empty_cache(force_sync: bool = True, max_retries: int = 3) -> None:

@@ -15,7 +15,10 @@
 The main entry point to run the PPO algorithm
 """
 
+<<<<<<< HEAD
 import asyncio
+=======
+>>>>>>> rebuttal
 import datetime
 import logging
 import os
@@ -36,6 +39,10 @@ except ImportError:
 from megatron.core import parallel_state as mpu
 
 from verl import DataProto
+<<<<<<< HEAD
+=======
+from verl.models.mcore import get_mcore_weight_converter
+>>>>>>> rebuttal
 from verl.single_controller.base import Worker
 from verl.single_controller.base.decorator import Dispatch, make_nd_compute_dataproto_dispatch_fn, register
 from verl.utils import hf_tokenizer
@@ -57,6 +64,10 @@ from verl.utils.megatron_utils import (
     offload_megatron_model_to_cpu,
     offload_megatron_optimizer,
     per_tensor_generator,
+<<<<<<< HEAD
+=======
+    register_megatron_training_hooks,
+>>>>>>> rebuttal
 )
 from verl.utils.memory_utils import aggressive_empty_cache
 from verl.utils.model import get_hf_model_path, load_mcore_dist_weights, load_megatron_gptmodel_weights
@@ -69,6 +80,10 @@ from verl.utils.profiler import (
     simple_timer,
 )
 from verl.utils.profiler.performance import reduce_timing, topk_reduce_ratio_min_max
+<<<<<<< HEAD
+=======
+from verl.utils.ray_utils import get_event_loop
+>>>>>>> rebuttal
 from verl.workers.actor.megatron_actor import MegatronPPOActor
 from verl.workers.config import HFModelConfig, McoreCriticConfig, RolloutConfig
 from verl.workers.critic.megatron_critic import MegatronPPOCritic
@@ -154,6 +169,7 @@ class MegatronWorker(Worker):
 
         # todo: remove this line after mcore adopt mbridge 0.15, now for compatibility
         override_transformer_config = mapping_string_to_attn_backend(override_transformer_config)
+<<<<<<< HEAD
 
         if use_mbridge:
             from verl.models.mcore.mbridge import AutoBridge
@@ -161,6 +177,20 @@ class MegatronWorker(Worker):
             bridge = AutoBridge.from_config(hf_config)
             bridge.set_extra_args(**override_transformer_config)
             tf_config = bridge.config
+=======
+        fp16 = dtype == torch.float16
+        bf16 = dtype == torch.bfloat16
+        if fp16:
+            assert use_mbridge, "fp16 mode requires use_mbridge to be True"
+        if use_mbridge:
+            from verl.models.mcore.mbridge import AutoBridge
+
+            bridge = AutoBridge.from_config(hf_config, dtype=dtype)
+            bridge.set_extra_args(**override_transformer_config)
+            tf_config = bridge.config
+            tf_config.fp16 = fp16
+            tf_config.bf16 = bf16
+>>>>>>> rebuttal
             self.bridge = bridge
         else:
             tf_config = hf_to_mcore_config(hf_config, dtype, **override_transformer_config)
@@ -374,7 +404,11 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
         # TODO: add more optimizer args into config
         if self._is_actor:
+<<<<<<< HEAD
             optim_config_megatron = init_megatron_optim_config(optim_config)
+=======
+            optim_config_megatron = init_megatron_optim_config(optim_config, fp16=self.dtype == torch.float16)
+>>>>>>> rebuttal
             actor_optimizer = get_megatron_optimizer(model=actor_module, config=optim_config_megatron)
             actor_optimizer_scheduler = get_megatron_optimizer_param_scheduler(
                 optimizer=actor_optimizer, config=optim_config
@@ -386,6 +420,11 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
         log_gpu_memory_usage("After actor optimizer init", logger=logger)
 
+<<<<<<< HEAD
+=======
+        register_megatron_training_hooks(actor_module, actor_optimizer)
+
+>>>>>>> rebuttal
         return actor_module, actor_optimizer, actor_optimizer_scheduler, self.hf_config, optim_config
 
     def _build_rollout(self, trust_remote_code=False):
@@ -397,6 +436,7 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
         # 2. build rollout device mesh
         infer_tp = self.config.rollout.tensor_model_parallel_size * self.config.rollout.data_parallel_size
+<<<<<<< HEAD
         dp = self.world_size // infer_tp
         assert self.world_size % infer_tp == 0, (
             f"rollout world_size: {self.world_size} is not divisible by infer_tp: {infer_tp}"
@@ -406,6 +446,22 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
         )
 
         is_collect = rollout_device_mesh["infer_tp"].get_local_rank() == 0
+=======
+        infer_pp = self.config.rollout.pipeline_model_parallel_size
+        infer_world_size = infer_tp * infer_pp
+        dp = self.world_size // infer_world_size
+        assert self.world_size % infer_world_size == 0, (
+            f"rollout world_size: {self.world_size} is not divisible by infer_world_size: {infer_world_size}"
+        )
+        rollout_device_mesh = init_device_mesh(
+            get_device_name(), mesh_shape=(dp, infer_tp, infer_pp), mesh_dim_names=["dp", "infer_tp", "infer_pp"]
+        )
+
+        is_collect = (
+            rollout_device_mesh["infer_tp"].get_local_rank() == 0
+            and rollout_device_mesh["infer_pp"].get_local_rank() == 0
+        )
+>>>>>>> rebuttal
         self._register_dispatch_collect_info(
             "rollout", dp_rank=rollout_device_mesh["dp"].get_local_rank(), is_collect=is_collect
         )
@@ -424,6 +480,7 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
         )
         log_gpu_memory_usage(f"After building {self.config.rollout.name} rollout", logger=logger)
 
+<<<<<<< HEAD
         from verl.models.mcore import get_mcore_weight_converter
 
         self.layer_name_mapping = {
@@ -434,12 +491,18 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
         if not self.bridge:
             self.weight_converter = get_mcore_weight_converter(self.actor_model_config, self.dtype)
 
+=======
+>>>>>>> rebuttal
         # 5. switch to trainer mode
         # NOTE: It's critical that hybrid engine in trainer mode initially to load checkpoint.
         # For sync mode, we directly switch to trainer mode here.
         # For async mode, we can't call run_until_complete here, so we will switch to trainer mode in AgentLoopManager.
         if rollout_config.mode == "sync" and self._is_actor:
+<<<<<<< HEAD
             loop = asyncio.get_event_loop()
+=======
+            loop = get_event_loop()
+>>>>>>> rebuttal
             loop.run_until_complete(self.trainer_mode())
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
@@ -466,10 +529,17 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
             )
         else:
             override_transformer_config = {}
+<<<<<<< HEAD
         self.param_dtype = torch.bfloat16
         log_gpu_memory_usage("Before init actor model and optimizer", logger=logger)
         self.dtype = PrecisionType.to_dtype(self.param_dtype)
         if self._is_actor or self._is_rollout:
+=======
+        self.param_dtype = PrecisionType.to_dtype(self.config.actor.megatron.dtype)
+        log_gpu_memory_usage("Before init actor model and optimizer", logger=logger)
+        self.dtype = PrecisionType.to_dtype(self.param_dtype)
+        if self._is_actor:
+>>>>>>> rebuttal
             # we need the model for actor and rollout
             optim_config = self.config.actor.optim if self._is_actor else None
             (
@@ -549,6 +619,18 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
                 bridge=self.bridge,
                 use_dist_checkpointing=self.config.actor.megatron.use_dist_checkpointing,
             )
+<<<<<<< HEAD
+=======
+
+            self.layer_name_mapping = {
+                "qkv_layer_name": "self_attention.linear_qkv.",
+                "gate_proj_layer_name": "linear_fc1.",
+            }
+            self.weight_converter = None
+            if not self.config.actor.megatron.use_mbridge:
+                self.weight_converter = get_mcore_weight_converter(self.actor_model_config, self.dtype)
+
+>>>>>>> rebuttal
         get_torch_device().empty_cache()
         log_gpu_memory_usage("After init_model finish", logger=logger)
 
@@ -558,6 +640,11 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
         if self._is_offload_param:
             load_megatron_model_to_gpu(self.actor.actor_module, load_grad=False)
+<<<<<<< HEAD
+=======
+            log_gpu_memory_usage("After load actor params during rollout_mode", logger=logger)
+
+>>>>>>> rebuttal
         if self.bridge is not None:
             per_tensor_param = self.bridge.export_weights(self.actor.actor_module)
         else:
@@ -669,7 +756,11 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
         timing_generate = {}
         if self._is_actor:  # For rollout only, we do not switch context.
+<<<<<<< HEAD
             loop = asyncio.get_event_loop()
+=======
+            loop = get_event_loop()
+>>>>>>> rebuttal
             loop.run_until_complete(self.rollout_mode())
             log_gpu_memory_usage("After switch to rollout mode", logger=logger)
 
@@ -749,6 +840,18 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def load_checkpoint(self, checkpoint_path, hdfs_path=None, del_local_after_load=True):
+<<<<<<< HEAD
+=======
+        # No checkpoint to load, just offload the model and optimizer to CPU
+        if checkpoint_path is None:
+            if self._is_offload_param:
+                offload_megatron_model_to_cpu(self.actor_module)
+            if self._is_offload_optimizer:
+                offload_megatron_optimizer(self.actor_optimizer)
+            log_gpu_memory_usage("After offload actor params and optimizer during load_checkpoint", logger=logger)
+            return
+
+>>>>>>> rebuttal
         if self._is_offload_param:
             load_megatron_model_to_gpu(self.actor_module)
         self.checkpoint_mananager.load_checkpoint(
@@ -774,6 +877,34 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
         if self._is_offload_param:
             offload_megatron_model_to_cpu(self.actor_module)
 
+<<<<<<< HEAD
+=======
+    @register(dispatch_mode=Dispatch.ONE_TO_ALL)
+    def start_profile(self, **kwargs) -> None:
+        """Start profiling for the current rank in the current training step."""
+        self.profiler.start(**kwargs)
+
+    @register(dispatch_mode=Dispatch.ONE_TO_ALL)
+    def stop_profile(self) -> None:
+        """Stop profiling for the current rank in the current training step."""
+        self.profiler.stop()
+
+    @register(dispatch_mode=Dispatch.ONE_TO_ALL)
+    def dump_memory_snapshot(self, tag: str = "manual", sub_dir: str = None) -> None:
+        """Manually trigger a CUDA memory snapshot dump on all ranks."""
+        # Memory snapshot is now handled by the profiler system
+        # This method is kept for backward compatibility but delegates to profiler
+        if hasattr(self, "profiler") and hasattr(self.profiler, "_impl"):
+            try:
+                # Try to use the profiler's memory snapshot functionality
+                if hasattr(self.profiler._impl, "sampler"):
+                    out_dir = OmegaConf.select(self.config, "actor.profiler.save_path") or "."
+                    self.profiler._impl.sampler.dump_memory_snapshot(out_dir=out_dir, tag=tag, sub_dir=sub_dir)
+            except Exception as e:
+                # Log a warning if memory snapshot fails. This might be expected if the profiler doesn't support it.
+                logger.warning(f"Failed to dump memory snapshot: {e}")
+
+>>>>>>> rebuttal
 
 class AsyncActorRolloutRefWorker(ActorRolloutRefWorker):
     @register(dispatch_mode=Dispatch.DIRECT_ROLLOUT_METHOD)
@@ -939,12 +1070,22 @@ class CriticWorker(MegatronWorker, DistProfilerExtension):
             print_model_size(critic_module[0])
 
         # TODO: add more optimizer args into config
+<<<<<<< HEAD
         optim_config_megatron = init_megatron_optim_config(optim_config)
+=======
+        optim_config_megatron = init_megatron_optim_config(optim_config, fp16=self.dtype == torch.float16)
+>>>>>>> rebuttal
         critic_optimizer = get_megatron_optimizer(model=critic_module, config=optim_config_megatron)
         critic_optimizer_scheduler = get_megatron_optimizer_param_scheduler(
             optimizer=critic_optimizer, config=optim_config
         )
         get_torch_device().empty_cache()
+<<<<<<< HEAD
+=======
+
+        register_megatron_training_hooks(critic_module, critic_optimizer)
+
+>>>>>>> rebuttal
         return critic_module, critic_optimizer, critic_optimizer_scheduler, self.hf_config, optim_config
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
@@ -965,7 +1106,11 @@ class CriticWorker(MegatronWorker, DistProfilerExtension):
         override_ddp_config = OmegaConf.to_container(
             OmegaConf.create(self.config.megatron.get("override_ddp_config", {}))
         )
+<<<<<<< HEAD
         self.param_dtype = torch.bfloat16
+=======
+        self.param_dtype = PrecisionType.to_dtype(self.config.megatron.dtype)
+>>>>>>> rebuttal
         self.dtype = PrecisionType.to_dtype(self.param_dtype)
         (
             self.critic_module,
@@ -1221,7 +1366,11 @@ class RewardModelWorker(MegatronWorker, DistProfilerExtension):
                 rm_tokenizer_local_path, trust_remote_code=self.config.model.get("trust_remote_code", False)
             )
 
+<<<<<<< HEAD
         self.param_dtype = torch.bfloat16
+=======
+        self.param_dtype = PrecisionType.to_dtype(self.config.megatron.dtype)
+>>>>>>> rebuttal
         self.dtype = PrecisionType.to_dtype(self.param_dtype)
 
         reward_model_module, reward_model_config = self._build_rm_model(

@@ -1,6 +1,10 @@
 hydra:
   searchpath:
+<<<<<<< HEAD
     - file://src/verl/verl/trainer/config
+=======
+    - file://verl/trainer/config
+>>>>>>> rebuttal
 
 defaults:
   - ppo_trainer

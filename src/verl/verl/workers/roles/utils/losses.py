@@ -19,12 +19,24 @@ from tensordict import TensorDict
 from verl.trainer.ppo.core_algos import agg_loss, compute_value_loss, get_policy_loss_fn, kl_penalty
 from verl.utils import tensordict_utils as tu
 from verl.utils.dataset.dataset_utils import DatasetPadMode
+<<<<<<< HEAD
 from verl.utils.torch_functional import masked_mean
 from verl.workers.config import ActorConfig, CriticConfig
 
 
 def sft_loss(config: ActorConfig, model_output, data: TensorDict, dp_group=None):
     pad_mode = tu.get_non_tensor_data(data=data, key="pad_mode", default=DatasetPadMode.LEFT_RIGHT)
+=======
+from verl.utils.torch_functional import masked_mean, masked_sum
+from verl.workers.config import ActorConfig, CriticConfig
+from verl.workers.roles.utils.padding import no_padding_2_padding
+
+
+def sft_loss(config: ActorConfig, model_output, data: TensorDict, dp_group=None):
+    pad_mode = tu.get_non_tensor_data(data=data, key="pad_mode", default=DatasetPadMode.NO_PADDING)
+    dp_size = data["dp_size"]
+    batch_num_tokens = data["batch_num_tokens"]
+>>>>>>> rebuttal
 
     log_prob = model_output["log_probs"]
 
@@ -34,16 +46,30 @@ def sft_loss(config: ActorConfig, model_output, data: TensorDict, dp_group=None)
         loss_mask = data["loss_mask"]
 
         log_prob_flatten = log_prob.values()
+<<<<<<< HEAD
         cu_seqlens = log_prob.offsets()
+=======
+>>>>>>> rebuttal
         loss_mask_flatten = loss_mask.values()
 
         # left-shift the loss mask by one token to align with log_prob
         loss_mask_flatten = torch.roll(loss_mask_flatten, shifts=-1, dims=0)
+<<<<<<< HEAD
         loss_mask_flatten[cu_seqlens[1:] - 1] = 0
         loss = -masked_mean(log_prob_flatten, loss_mask_flatten)
     else:
         response_mask = data["response_mask"].to(bool)
         loss = -masked_mean(log_prob, response_mask)
+=======
+
+        # NOTE: loss is averaged over all tokens in the batch across all data parallel groups,
+        # For FSDP backend, the loss is directly used for backward; while for Megatron backend,
+        # the loss should be scaled by `num_microbatches` and `cp_size` for pp schedule.
+        loss = -masked_sum(log_prob_flatten, loss_mask_flatten) / batch_num_tokens * dp_size
+    else:
+        response_mask = data["response_mask"].to(bool)
+        loss = -masked_sum(log_prob, response_mask) / batch_num_tokens * dp_size
+>>>>>>> rebuttal
 
     return loss, {"loss": loss.detach().item()}
 
@@ -52,6 +78,13 @@ def ppo_loss(config: ActorConfig, model_output, data: TensorDict, dp_group=None)
     log_prob = model_output["log_probs"]
     entropy = model_output.get("entropy", None)
 
+<<<<<<< HEAD
+=======
+    log_prob = no_padding_2_padding(log_prob, data)  # (bsz, response_length)
+    if entropy is not None:
+        entropy = no_padding_2_padding(entropy, data)  # (bsz, response_length)
+
+>>>>>>> rebuttal
     metrics = {}
 
     response_mask = data["response_mask"].to(bool)
@@ -64,7 +97,11 @@ def ppo_loss(config: ActorConfig, model_output, data: TensorDict, dp_group=None)
     loss_mode = config.policy_loss.get("loss_mode", "vanilla")
 
     policy_loss_fn = get_policy_loss_fn(loss_mode)
+<<<<<<< HEAD
     pg_loss, pg_clipfrac, ppo_kl, pg_clipfrac_lower = policy_loss_fn(
+=======
+    pg_loss, pg_metrics = policy_loss_fn(
+>>>>>>> rebuttal
         old_log_prob=old_log_prob,
         log_prob=log_prob,
         advantages=advantages,
@@ -72,6 +109,7 @@ def ppo_loss(config: ActorConfig, model_output, data: TensorDict, dp_group=None)
         loss_agg_mode=loss_agg_mode,
         config=config,
     )
+<<<<<<< HEAD
 
     metrics.update(
         {
@@ -81,6 +119,10 @@ def ppo_loss(config: ActorConfig, model_output, data: TensorDict, dp_group=None)
             "pg_clipfrac_lower": pg_clipfrac_lower.detach().item(),
         }
     )
+=======
+    metrics.update(pg_metrics)
+    metrics["actor/pg_loss"] = pg_loss.detach().item()
+>>>>>>> rebuttal
     policy_loss = pg_loss
 
     # add entropy loss
@@ -105,7 +147,11 @@ def ppo_loss(config: ActorConfig, model_output, data: TensorDict, dp_group=None)
 
 def value_loss(config: CriticConfig, model_output, data: TensorDict, dp_group=None):
     vpreds = model_output["values"]
+<<<<<<< HEAD
     values = data["values"]
+=======
+    vpreds = no_padding_2_padding(vpreds, data)  # (bsz, response_length)
+>>>>>>> rebuttal
 
     values = data["values"]
     returns = data["returns"]
