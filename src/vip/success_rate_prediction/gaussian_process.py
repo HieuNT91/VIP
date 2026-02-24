@@ -45,10 +45,11 @@ class GPR:
                 return_std=False, 
                 qid_to_idx=None, 
                 prior_value=-1,
+                length_scale=0.27
                  ):
         self.distance_matrix = distance_matrix
         # self.covariance_matrix = kernel_rbf_median(distance_matrix)
-        self.covariance_matrix = kernel_rbf(distance_matrix, 0.27)
+        self.covariance_matrix = kernel_rbf(distance_matrix, length_scale)
         # self.covariance_matrix = kernel_rbf(distance_matrix, 0.27)
         self.mean = np.zeros(self.covariance_matrix.shape[0]) + prior_value
         self.reuse_covariance = reuse_covariance

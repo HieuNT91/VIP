@@ -1,1 +1,1 @@
-from .bernoulli_allocation import allocate_rollout
+from .bernoulli_allocation import Allocator
