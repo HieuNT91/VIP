@@ -76,6 +76,8 @@ Notes:
 - rollout data (training step, accuracy of each question) are stored inside logs/file_logs/run_name. Make sure to copy rollout data of the first 15 steps from the vanilla GRPO/RLOO to (e.g. logs/file_logs/VIP-Qwen2.5-Math-1.5B/run_name-rollout_data.json) run to the VIP run to ensure a smooth warmup.
 - You can also directly train VIP from the base model without warmup but you might get a noisier results.
 
+## Acknowledgement
+Our code is built on top of [Verl](https://github.com/verl-project/verl) and DAPO. 
 
 ## Contact
 Please feel free to contact us if you have any questions about the code or the paper. 
