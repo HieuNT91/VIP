@@ -5,8 +5,8 @@ set -a
 source .env
 set +a
 
-TRAIN_FILE=${TRAIN_FILE:-"${DATA_DIR}/vip-dapo-math-6k.parquet"}
-# TRAIN_FILE=${TRAIN_FILE:-"${DATA_DIR}/vip-dapo-math-17k.parquet"}
+# TRAIN_FILE=${TRAIN_FILE:-"${DATA_DIR}/vip-dapo-math-6k.parquet"}
+TRAIN_FILE=${TRAIN_FILE:-"${DATA_DIR}/vip-dapo-math-17k.parquet"}
 AIME24=${TEST_FILE:-"${DATA_DIR}/vip-aime-2024.parquet"}
 AIME25=${TEST_FILE:-"${DATA_DIR}/vip-aime-2025.parquet"}
 AMC=${TEST_FILE:-"${DATA_DIR}/vip-amc.parquet"}
@@ -15,9 +15,9 @@ OVERWRITE=${OVERWRITE:-0}
 mkdir -p "${DATA_DIR}"
 
 if [ ! -f "${TRAIN_FILE}" ] || [ "${OVERWRITE}" -eq 1 ]; then
-  wget -O "${TRAIN_FILE}" "https://huggingface.co/datasets/JunHill/Dedup-4shot-DAPO-Math-6k/resolve/main/data/train-00000-of-00001.parquet?download=true"
+  # wget -O "${TRAIN_FILE}" "https://huggingface.co/datasets/JunHill/Dedup-4shot-DAPO-Math-6k/resolve/main/data/train-00000-of-00001.parquet?download=true"
+  wget -O "${TRAIN_FILE}" "https://huggingface.co/datasets/JunHill/Dedup-4shot-DAPO-Math-17k/resolve/main/data/train-00000-of-00001.parquet?download=true"
 fi
-  # wget -O "${TRAIN_FILE}" "https://huggingface.co/datasets/JunHill/Dedup-4shot-DAPO-Math-17k/resolve/main/data/train-00000-of-00001.parquet?download=true"
 
 if [ ! -f "${AIME24}" ] || [ "${OVERWRITE}" -eq 1 ]; then
   wget -O "${AIME24}" "https://huggingface.co/datasets/JunHill/4shot-aime24/resolve/main/data/train-00000-of-00001.parquet?download=true"
