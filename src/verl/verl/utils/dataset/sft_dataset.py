@@ -18,10 +18,7 @@ SFT dataset
 Each parquet file contains
 """
 
-<<<<<<< HEAD
-=======
 import numpy as np
->>>>>>> rebuttal
 import pandas as pd
 import torch
 from omegaconf.listconfig import ListConfig
@@ -41,11 +38,7 @@ class SFTDataset(Dataset):
         config (OmegaConf): the data config
     """
 
-<<<<<<< HEAD
-    def __init__(self, parquet_files: str | ListConfig, tokenizer, config):
-=======
     def __init__(self, parquet_files: str | ListConfig, tokenizer, config, max_samples: int = -1):
->>>>>>> rebuttal
         prompt_key = config.get("prompt_key", "prompt")
         prompt_dict_keys = config.get("prompt_dict_keys", None)
         response_key = config.get("response_key", "response")
@@ -53,11 +46,8 @@ class SFTDataset(Dataset):
         max_length = config.get("max_length", 1024)
         truncation = config.get("truncation", "error")
         use_shm = config.get("use_shm", False)
-<<<<<<< HEAD
-=======
         self.shuffle = config.get("shuffle", False)
         self.seed = config.get("seed")
->>>>>>> rebuttal
         self.apply_chat_template_kwargs = config.get("apply_chat_template_kwargs", {})
 
         assert truncation in ["error", "left", "right"]
@@ -68,10 +58,7 @@ class SFTDataset(Dataset):
             parquet_files = [parquet_files]
 
         self.parquet_files = parquet_files
-<<<<<<< HEAD
-=======
         self.max_samples = max_samples
->>>>>>> rebuttal
         if isinstance(tokenizer, str):
             tokenizer = hf_tokenizer(tokenizer)
         self.tokenizer: PreTrainedTokenizer = tokenizer
@@ -105,8 +92,6 @@ class SFTDataset(Dataset):
             dataframe = pd.read_parquet(parquet_file)
             dataframes.append(dataframe)
         self.dataframe = pd.concat(dataframes)
-<<<<<<< HEAD
-=======
 
         total = len(self.dataframe)
         print(f"dataset len: {len(self.dataframe)}")
@@ -121,7 +106,6 @@ class SFTDataset(Dataset):
             self.dataframe = self.dataframe.iloc[indices.tolist()]
             print(f"selected {self.max_samples} random samples out of {total}")
 
->>>>>>> rebuttal
         self.prompts = self.dataframe[self.prompt_key]
         for key in self.prompt_dict_keys:
             # type(x): pandas.core.series.Series

@@ -162,8 +162,6 @@ def postprocess_packed_seqs(
     return output_new
 
 
-<<<<<<< HEAD
-=======
 def preprocess_packed_seqs_no_padding(
     input_ids: torch.Tensor, pre_process: bool = True
 ) -> tuple[torch.Tensor, PackedSeqParams]:
@@ -310,7 +308,6 @@ def postprocess_packed_seqs_no_padding(
     return output_new_tensor
 
 
->>>>>>> rebuttal
 def remove_left_padding(
     input_ids: torch.Tensor,
     attention_mask: torch.Tensor,

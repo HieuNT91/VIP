@@ -12,18 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-<<<<<<< HEAD
-from .agent_loop import AgentLoopBase, AgentLoopManager, AsyncLLMServerManager
-=======
 from .agent_loop import AgentLoopBase, AgentLoopManager, AgentLoopWorker, AsyncLLMServerManager
->>>>>>> rebuttal
 from .single_turn_agent_loop import SingleTurnAgentLoop
 from .tool_agent_loop import ToolAgentLoop
 
 _ = [SingleTurnAgentLoop, ToolAgentLoop]
 
-<<<<<<< HEAD
-__all__ = ["AgentLoopBase", "AgentLoopManager", "AsyncLLMServerManager"]
-=======
 __all__ = ["AgentLoopBase", "AgentLoopManager", "AsyncLLMServerManager", "AgentLoopWorker"]
->>>>>>> rebuttal

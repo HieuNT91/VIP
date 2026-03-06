@@ -46,8 +46,6 @@ except ImportError:
     pass
 
 try:
-<<<<<<< HEAD
-=======
     from vllm.model_executor.models.qwen3_vl_moe import Qwen3MoeLLMForCausalLM
 
     SUPPORTED_MOE_MODELS.append(Qwen3MoeLLMForCausalLM)
@@ -55,7 +53,6 @@ except ImportError:
     pass
 
 try:
->>>>>>> rebuttal
     from vllm.model_executor.models.kimi_vl import KimiVLForConditionalGeneration
 
     SUPPORTED_MOE_MODELS.append(KimiVLForConditionalGeneration)
@@ -81,29 +78,6 @@ def patch_vllm_moe_model_weight_loader(model):
     # (False, 'model.layers.0.mlp.experts.w13_weight')          use mlp.experts.weight_loader
     # (False, 'model.layers.0.mlp.experts.w2_weight')          use mlp.experts.weight_loader
 
-<<<<<<< HEAD
-    # Define MLP attribute mapping for different model types
-    MLP_ATTR_MAPPING = {
-        MixtralForCausalLM: "block_sparse_moe",
-    }
-    DEFAULT_MLP_ATTR = "mlp"
-
-    if not isinstance(model, tuple(SUPPORTED_MOE_MODELS)):
-        return
-
-    model = getattr(model, "model", None) or getattr(model, "language_model", None)
-    if model is None:
-        raise ValueError("The provided model does not have a valid 'model' or 'language_model' attribute.")
-
-    for layer in model.layers:
-        mlp_attr = MLP_ATTR_MAPPING.get(type(model), DEFAULT_MLP_ATTR)
-        mlp = getattr(layer, mlp_attr)
-
-        param_dict = dict(mlp.named_parameters())
-        for name, param in param_dict.items():
-            if "w13_weight" in name or "w2_weight" in name:
-                param.weight_loader = mlp.experts.weight_loader
-=======
     # Early return if no MOE models are supported
     if not SUPPORTED_MOE_MODELS:
         return
@@ -149,4 +123,3 @@ def patch_vllm_moe_model_weight_loader(model):
         for name, param in mlp.named_parameters():
             if "w13_weight" in name or "w2_weight" in name:
                 param.weight_loader = experts.weight_loader
->>>>>>> rebuttal

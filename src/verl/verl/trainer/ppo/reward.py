@@ -13,10 +13,7 @@
 # limitations under the License.
 
 import importlib.util
-<<<<<<< HEAD
-=======
 import inspect
->>>>>>> rebuttal
 import multiprocessing
 import os
 import sys
@@ -30,10 +27,7 @@ from omegaconf import DictConfig
 
 from verl import DataProto
 from verl.utils.reward_score import default_compute_score
-<<<<<<< HEAD
-=======
 from verl.utils.transferqueue_utils import tqbridge
->>>>>>> rebuttal
 from verl.workers.reward_manager import get_reward_manager_cls
 from verl.workers.reward_manager.abstract import AbstractRewardManager, RawRewardFn
 
@@ -47,8 +41,6 @@ def _call_with_kwargs(raw_fn, extra_kwargs, *args, **kwargs):
     return raw_fn(*args, **merged_kwargs)
 
 
-<<<<<<< HEAD
-=======
 async def _call_with_kwargs_async(raw_fn, extra_kwargs, *args, **kwargs):
     """Calls `raw_fn` by merging `extra_kwargs` into call-time `kwargs`, with `extra_kwargs` taking precedence.
 
@@ -58,7 +50,6 @@ async def _call_with_kwargs_async(raw_fn, extra_kwargs, *args, **kwargs):
     return await raw_fn(*args, **merged_kwargs)
 
 
->>>>>>> rebuttal
 def get_custom_reward_fn(config: DictConfig) -> Optional[RawRewardFn]:
     """Load and return a custom reward function from external file.
 
@@ -110,14 +101,10 @@ def get_custom_reward_fn(config: DictConfig) -> Optional[RawRewardFn]:
 
     reward_kwargs = dict(reward_fn_config.get("reward_kwargs", {}))
 
-<<<<<<< HEAD
-    return partial(_call_with_kwargs, raw_fn, reward_kwargs)
-=======
     if not inspect.iscoroutinefunction(raw_fn):
         return partial(_call_with_kwargs, raw_fn, reward_kwargs)
     else:
         return partial(_call_with_kwargs_async, raw_fn, reward_kwargs)
->>>>>>> rebuttal
 
 
 def load_reward_manager(
@@ -136,14 +123,11 @@ def load_reward_manager(
         An instance of the specified reward manager class.
     """
 
-<<<<<<< HEAD
-=======
     # Try to get a custom reward function based on the configuration
     # user defined reward manager can be registered in custom_reward_fn
     compute_score = get_custom_reward_fn(config)
     final_compute_score = compute_score
 
->>>>>>> rebuttal
     # The list of pre-defined reward managers are defined in `verl/workers/reward_manager/`:
     # naive: NaiveRewardManager
     # prime: PrimeRewardManager
@@ -155,21 +139,10 @@ def load_reward_manager(
     reward_manager_name = config.reward_model.get("reward_manager", "naive")
     reward_manager_cls = get_reward_manager_cls(reward_manager_name)
 
-<<<<<<< HEAD
-    # Try to get a custom reward function based on the configuration
-    compute_score = get_custom_reward_fn(config)
-    final_compute_score = compute_score
-
-    if compute_score is None:
-        sandbox_config = config.reward_model.get("sandbox_fusion")
-        sandbox_url = sandbox_config.get("url") if sandbox_config else None
-        memory_limit_mb = sandbox_config.get("memory_limit_mb", 1024)
-=======
     if compute_score is None:
         sandbox_config = config.reward_model.get("sandbox_fusion")
         sandbox_url = sandbox_config.get("url") if sandbox_config else None
         memory_limit_mb = sandbox_config.get("memory_limit_mb", 1024) if sandbox_config else 1024
->>>>>>> rebuttal
         if sandbox_url:
             sandbox_manager = multiprocessing.Manager()
             # Create a semaphore to control concurrent access to the sandbox
@@ -193,10 +166,7 @@ def load_reward_manager(
     )
 
 
-<<<<<<< HEAD
-=======
 @tqbridge(put_data=False)
->>>>>>> rebuttal
 def compute_reward(data: DataProto, reward_fn: AbstractRewardManager) -> tuple[torch.Tensor, dict[str, Any]]:
     """
     Compute reward for a batch of data.

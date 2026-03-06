@@ -36,8 +36,6 @@ class Role(Enum):
     RewardModel = 5
     ActorRolloutRef = 6
 
-<<<<<<< HEAD
-=======
     def __str__(self):
         return self._get_role_string()
 
@@ -69,7 +67,6 @@ class Role(Enum):
             raise ValueError(f"No Role found for string: {name}")
         return role
 
->>>>>>> rebuttal
 
 def need_reference_policy(
     role_worker_mapping: dict[Role, WorkerType],

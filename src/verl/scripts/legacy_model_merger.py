@@ -105,16 +105,6 @@ class BaseModelMerger(ABC):
             )
             self.hf_model_config_path = config.hf_model_path
 
-<<<<<<< HEAD
-        self.model_config = AutoConfig.from_pretrained(self.hf_model_config_path)
-
-    def get_transformers_auto_model_class(self):
-        if "ForTokenClassification" in self.model_config.architectures[0]:
-            return AutoModelForTokenClassification
-        elif "ForCausalLM" in self.model_config.architectures[0]:
-            return AutoModelForCausalLM
-        elif "ForConditionalGeneration" in self.model_config.architectures[0]:
-=======
         # Auto-detect huggingface subdirectory if it exists
         huggingface_subdir = os.path.join(self.hf_model_config_path, "huggingface")
         if os.path.isdir(huggingface_subdir):
@@ -142,7 +132,6 @@ class BaseModelMerger(ABC):
         elif "ForCausalLM" in architecture:
             return AutoModelForCausalLM
         elif "ForConditionalGeneration" in architecture:
->>>>>>> rebuttal
             return AutoModelForVision2Seq
 
         raise NotImplementedError(f"Unknown architecture {self.model_config.architectures}")
@@ -237,15 +226,11 @@ class BaseModelMerger(ABC):
         del model
 
         processor = hf_processor(self.hf_model_config_path)
-<<<<<<< HEAD
-        tokenizer = hf_tokenizer(self.hf_model_config_path)
-=======
         try:
             tokenizer = hf_tokenizer(self.hf_model_config_path)
         except Exception as e:
             warnings.warn(f"Failed to create tokenizer: {e}. This may affect tokenizer saving", stacklevel=1)
             tokenizer = None
->>>>>>> rebuttal
         if processor is not None:
             print(f"Saving processor to {self.config.target_dir}")
             processor.save_pretrained(self.config.target_dir)
@@ -273,11 +258,7 @@ class FSDPModelMerger(BaseModelMerger):
             if match:
                 return int(match.group(1))
         raise FileNotFoundError(
-<<<<<<< HEAD
-            f"Could not determine world size. No file matching 'model_world_size_(\d+)_rank_0.pt' found in {self.config.local_dir}"
-=======
             f"Could not determine world size. No file matching 'model_world_size_(\\d+)_rank_0.pt' found in {self.config.local_dir}"
->>>>>>> rebuttal
         )
 
     def _load_rank_zero_state_dict(self, world_size: int) -> dict:

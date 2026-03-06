@@ -24,10 +24,7 @@ def default_compute_score(
     sandbox_fusion_url=None,
     concurrent_semaphore=None,
     memory_limit_mb=None,
-<<<<<<< HEAD
-=======
     **kwargs,
->>>>>>> rebuttal
 ):
     """Compute the score for a given solution based on the data source.
 
@@ -59,11 +56,7 @@ def default_compute_score(
 
         # from . import math_verify
         # res = math_verify.compute_score(solution_str, ground_truth)
-<<<<<<< HEAD
-    elif data_source in ["math_dapo", "math", "math_dapo_reasoning"] or "aime" in data_source.lower() or "amc" in data_source.lower():
-=======
     elif data_source in ["math_dapo", "math", "math_dapo_reasoning"] or data_source.lower().startswith("aime"):
->>>>>>> rebuttal
         from . import math_dapo
 
         res = math_dapo.compute_score(solution_str, ground_truth)

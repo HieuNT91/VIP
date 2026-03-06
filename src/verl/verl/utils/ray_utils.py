@@ -15,10 +15,7 @@
 Contains commonly used utilities for ray
 """
 
-<<<<<<< HEAD
-=======
 import asyncio
->>>>>>> rebuttal
 import concurrent.futures
 import os
 from typing import Any, Optional
@@ -83,8 +80,6 @@ def parallel_put(data_list: list[Any], max_workers: Optional[int] = None):
             output[index] = data_ref
 
     return output
-<<<<<<< HEAD
-=======
 
 
 def get_event_loop():
@@ -95,4 +90,3 @@ def get_event_loop():
         asyncio.set_event_loop(loop)
 
     return loop
->>>>>>> rebuttal

@@ -74,10 +74,6 @@ class MegatronPPOCritic(BasePPOCritic):
                 "sequence_parallel": self.tf_config.sequence_parallel,
                 "DDP_impl": "local",
                 "layernorm_allreduce_bucket_threshold": 0,
-<<<<<<< HEAD
-                "pipeline_model_parallel_split_rank": None,
-=======
->>>>>>> rebuttal
                 "reduce_grads_use_alltoall": False,
             }
         )
@@ -259,11 +255,7 @@ class MegatronPPOCritic(BasePPOCritic):
                 input_ids,
                 attention_mask,
                 position_ids,
-<<<<<<< HEAD
-                sequence_parallel=self.tf_config.sequence_parallel,
-=======
                 {},  # multi_modal_inputs
->>>>>>> rebuttal
                 value_model=True,
             )
 

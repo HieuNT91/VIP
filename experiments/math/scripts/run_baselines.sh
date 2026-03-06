@@ -7,13 +7,13 @@ set +a
 
 adv_estimator=${ADVANTAGE_ESTIMATOR:-"rloo"}
 # very important! please modify the max_position_embeddings in config.json to 32768 after downloading from huggingface
-BASE_MODEL=${BASE_MODEL:-"Qwen2.5-32B"}
-NGPUS=${NGPUS:-8}
-n_resp_per_prompt=${ROLLOUT_SIZE:-16}
+BASE_MODEL=${BASE_MODEL:-"Qwen2.5-Math-1.5B"}
+NGPUS=${NGPUS:-4}
+n_resp_per_prompt=${ROLLOUT_SIZE:-8}
 SEED=${SEED:-42}
 GPU_UTIL=${GPU_UTIL:-0.8}
 
-project_name="baseline-${BASE_MODEL}"
+project_name="baseline-${BASE_MODEL}-token-mean"
 exp_name="${adv_estimator}-${BASE_MODEL}-rolloutn${n_resp_per_prompt}-seed${SEED}"
 TENSORBOARD_DIR=${TENSORBOARD_DIR}/${project_name}/${exp_name}
 
@@ -45,10 +45,17 @@ train_prompt_mini_bsz=64 # set this equal to train_prompt_bsz to enable on_polic
 # Paths
 MODEL_PATH="${BASE_MODEL_DIR}/${BASE_MODEL}"
 CKPTS_DIR=${CKPTS_DIR}/${project_name}/${exp_name}
-TRAIN_FILE=${DATA_DIR}/vip-dapo-math-6k.parquet
+TRAIN_FILE=${DATA_DIR}/vip-dapo-math-17k.parquet
 AIME24_FILE=${DATA_DIR}/vip-aime-2024.parquet
 AIME25_FILE=${DATA_DIR}/vip-aime-2025.parquet
 
+rollout_is=sequence
+rollout_is_threshold=2.0
+rollout_is_batch_normalize=true
+rollout_rs=geometric
+rollout_rs_threshold=1.01
+rollout_rs_threshold_lower=0.99
+rollout_token_veto_threshold=1e-4
 
 # Algorithm
 temperature=1.0
@@ -98,7 +105,7 @@ python3 -m train.dapo.main_dapo \
     actor_rollout_ref.model.path="${MODEL_PATH}" \
     actor_rollout_ref.model.enable_gradient_checkpointing=True \
     actor_rollout_ref.actor.optim.lr=1e-6 \
-    actor_rollout_ref.actor.optim.lr_warmup_steps=20 \
+    actor_rollout_ref.actor.optim.lr_warmup_steps=5 \
     actor_rollout_ref.actor.optim.weight_decay=0.1 \
     actor_rollout_ref.actor.ppo_mini_batch_size=${train_prompt_mini_bsz} \
     actor_rollout_ref.actor.fsdp_config.param_offload=${offload} \
@@ -120,6 +127,13 @@ python3 -m train.dapo.main_dapo \
     actor_rollout_ref.rollout.val_kwargs.do_sample=True \
     actor_rollout_ref.rollout.val_kwargs.n=32 \
     actor_rollout_ref.rollout.name=vllm \
+    algorithm.rollout_correction.rollout_is=${rollout_is} \
+    algorithm.rollout_correction.rollout_is_threshold=${rollout_is_threshold} \
+    algorithm.rollout_correction.rollout_is_batch_normalize=${rollout_is_batch_normalize} \
+    algorithm.rollout_correction.rollout_rs=${rollout_rs} \
+    algorithm.rollout_correction.rollout_rs_threshold=${rollout_rs_threshold} \
+    algorithm.rollout_correction.rollout_rs_threshold_lower=${rollout_rs_threshold_lower} \
+    algorithm.rollout_correction.rollout_token_veto_threshold=${rollout_token_veto_threshold} \
     actor_rollout_ref.ref.fsdp_config.param_offload=${offload} \
     actor_rollout_ref.ref.ulysses_sequence_parallel_size=${sp_size} \
     actor_rollout_ref.actor.fsdp_config.fsdp_size=-1 \
@@ -133,13 +147,13 @@ python3 -m train.dapo.main_dapo \
     trainer.n_gpus_per_node=${NGPUS} \
     trainer.nnodes="1" \
     trainer.val_before_train=False \
-    trainer.test_freq=5 \
-    trainer.save_freq=11 \
-    trainer.total_epochs=5 \
+    trainer.test_freq=3 \
+    trainer.save_freq=15 \
+    trainer.total_epochs=2 \
     data.shuffle=False \
     trainer.default_local_dir="${CKPTS_DIR}" \
     trainer.resume_mode=auto \
-    trainer.log_val_generations=17920 \
+    # trainer.log_val_generations=17920 \
     # actor_rollout_ref.rollout.skip_rollout=True \
     # actor_rollout_ref.rollout.skip_dump_dir="${HOME_DIR}/tmp/rollout_dump" \
     # trainer.total_training_steps=70 \

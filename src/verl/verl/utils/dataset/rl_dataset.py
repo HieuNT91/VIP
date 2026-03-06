@@ -18,10 +18,7 @@ import copy
 import logging
 import os
 import re
-<<<<<<< HEAD
-=======
 import traceback
->>>>>>> rebuttal
 from collections import defaultdict
 from typing import Optional
 
@@ -47,11 +44,7 @@ def collate_fn(data_list: list[dict]) -> dict:
 
     Returns:
         Dict where tensor entries are stacked into a torch.Tensor of shape
-<<<<<<< HEAD
-        (batch_size, \*dims) and non-tensor entries are converted to
-=======
         (batch_size, \\*dims) and non-tensor entries are converted to
->>>>>>> rebuttal
         np.ndarray of dtype object with shape (batch_size,).
     """
     tensors = defaultdict(list)
@@ -96,10 +89,7 @@ class RLHFDataset(Dataset):
         tokenizer: PreTrainedTokenizer,
         config: DictConfig,
         processor: Optional[ProcessorMixin] = None,
-<<<<<<< HEAD
-=======
         max_samples: int = -1,
->>>>>>> rebuttal
     ):
         if not isinstance(data_files, list | ListConfig):
             data_files = [data_files]
@@ -108,20 +98,14 @@ class RLHFDataset(Dataset):
         self.original_data_files = copy.deepcopy(data_files)  # use for resume
         self.tokenizer = tokenizer
         self.processor = processor
-<<<<<<< HEAD
-=======
         self.max_samples = max_samples
->>>>>>> rebuttal
         self.config = config
 
         self.cache_dir = os.path.expanduser(config.get("cache_dir", "~/.cache/verl/rlhf"))
         self.prompt_key = config.get("prompt_key", "prompt")
         self.image_key = config.get("image_key", "images")
         self.video_key = config.get("video_key", "videos")
-<<<<<<< HEAD
-=======
         self.image_patch_size = config.get("image_patch_size", 14)
->>>>>>> rebuttal
         self.max_prompt_length = config.get("max_prompt_length", 1024)
         self.return_raw_chat = config.get("return_raw_chat", False)
         self.return_full_prompt = config.get("return_full_prompt", False)
@@ -129,10 +113,6 @@ class RLHFDataset(Dataset):
         self.filter_overlong_prompts = config.get("filter_overlong_prompts", True)
         self.apply_chat_template_kwargs = config.get("apply_chat_template_kwargs", {})
 
-<<<<<<< HEAD
-        self.num_workers = config.get("filter_overlong_prompts_workers", max(1, os.cpu_count() // 4))
-        self.num_workers = min(self.num_workers, os.cpu_count())
-=======
         self.tool_config_path = config.get("tool_config_path", None)
         self.tool_schemas = None
         if self.tool_config_path:
@@ -150,18 +130,14 @@ class RLHFDataset(Dataset):
 
         self.num_workers = config.get("filter_overlong_prompts_workers", max(1, os.cpu_count() // 4))
         self.num_workers = min(self.num_workers, os.cpu_count()) if self.num_workers is not None else None
->>>>>>> rebuttal
         self.use_shm = config.get("use_shm", False)
         self.chat_template_func = config.get("chat_template_func", None)
         self.need_tools_kwargs = config.get("need_tools_kwargs", False)
         self.filter_prompts = config.get("filter_prompts", True)
         self.serialize_dataset = False
         self.return_multi_modal_inputs = config.get("return_multi_modal_inputs", True)
-<<<<<<< HEAD
-=======
         self.shuffle = config.get("shuffle", False)
         self.seed = config.get("seed")
->>>>>>> rebuttal
 
         self._download()
         self._read_files_and_tokenize()
@@ -181,10 +157,6 @@ class RLHFDataset(Dataset):
             dataframes.append(dataframe)
         self.dataframe: datasets.Dataset = datasets.concatenate_datasets(dataframes)
 
-<<<<<<< HEAD
-        print(f"dataset len: {len(self.dataframe)}")
-
-=======
         total = len(self.dataframe)
         print(f"dataset len: {len(self.dataframe)}")
 
@@ -198,7 +170,6 @@ class RLHFDataset(Dataset):
             self.dataframe = self.dataframe.select(indices.tolist())
             print(f"selected {self.max_samples} random samples out of {total}")
 
->>>>>>> rebuttal
         self.dataframe = self.maybe_filter_out_long_prompts(self.dataframe)
 
     def maybe_filter_out_long_prompts(self, dataframe: datasets.Dataset = None):
@@ -214,24 +185,6 @@ class RLHFDataset(Dataset):
                 from verl.utils.dataset.vision_utils import process_image, process_video
 
                 def doc2len(doc) -> int:
-<<<<<<< HEAD
-                    messages = self._build_messages(doc)
-                    raw_prompt = self.processor.apply_chat_template(
-                        messages, add_generation_prompt=True, tokenize=False, **self.apply_chat_template_kwargs
-                    )
-                    images = (
-                        [process_image(image) for image in doc[image_key]]
-                        if image_key in doc and doc[image_key]
-                        else None
-                    )
-                    videos = (
-                        [process_video(video) for video in doc[video_key]]
-                        if video_key in doc and doc[video_key]
-                        else None
-                    )
-
-                    return len(processor(text=[raw_prompt], images=images, videos=videos)["input_ids"][0])
-=======
                     try:
                         messages = self._build_messages(doc)
                         # pass tool schemas if available so the processor can format prompts
@@ -275,18 +228,10 @@ class RLHFDataset(Dataset):
                         print("Error processing one of the samples, skipping...")
                         traceback.print_exc()
                         return self.max_prompt_length + 1
->>>>>>> rebuttal
 
             else:
 
                 def doc2len(doc) -> int:
-<<<<<<< HEAD
-                    return len(
-                        tokenizer.apply_chat_template(
-                            doc[prompt_key], add_generation_prompt=True, **self.apply_chat_template_kwargs
-                        )
-                    )
-=======
                     try:
                         apply_kwargs = dict(**self.apply_chat_template_kwargs)
                         if self.tool_schemas is not None:
@@ -299,7 +244,6 @@ class RLHFDataset(Dataset):
                         print("Error processing one of the samples, skipping...")
                         traceback.print_exc()
                         return self.max_prompt_length + 1
->>>>>>> rebuttal
 
             dataframe = dataframe.filter(
                 lambda doc: doc2len(doc) <= self.max_prompt_length,
@@ -362,28 +306,13 @@ class RLHFDataset(Dataset):
             images = None
             row_dict_images = row_dict.pop(self.image_key, None)
             if row_dict_images:
-<<<<<<< HEAD
-                images = [process_image(image) for image in row_dict_images]
-=======
                 images = [process_image(image, image_patch_size=self.image_patch_size) for image in row_dict_images]
->>>>>>> rebuttal
 
                 # due to the image key is "image" instead of "images" in vllm, we need to use "image" here
                 # link: https://github.com/vllm-project/vllm/blob/3c545c0c3b98ee642373a308197d750d0e449403/vllm/multimodal/parse.py#L205
                 multi_modal_data["image"] = images
 
             videos = None
-<<<<<<< HEAD
-            row_dict_videos = row_dict.pop(self.video_key, None)
-            if row_dict_videos:
-                videos = [process_video(video) for video in row_dict_videos]
-
-                # due to the video key is "video" instead of "videos" in vllm, we need to use "video" here
-                # link: https://github.com/vllm-project/vllm/blob/3c545c0c3b98ee642373a308197d750d0e449403/vllm/multimodal/parse.py#L205
-                multi_modal_data["video"] = [video.numpy() for video in videos]
-
-            model_inputs = self.processor(text=[raw_prompt], images=images, videos=videos, return_tensors="pt")
-=======
             videos_kwargs = {}
             row_dict_videos = row_dict.pop(self.video_key, None)
             if row_dict_videos:
@@ -407,7 +336,6 @@ class RLHFDataset(Dataset):
             model_inputs = self.processor(
                 text=[raw_prompt], images=images, videos=videos, videos_kwargs=videos_kwargs, return_tensors="pt"
             )
->>>>>>> rebuttal
 
             input_ids = model_inputs.pop("input_ids")
             attention_mask = model_inputs.pop("attention_mask")
@@ -449,15 +377,11 @@ class RLHFDataset(Dataset):
         )
 
         if self.processor is not None and "Qwen2VLImageProcessor" in self.processor.image_processor.__class__.__name__:
-<<<<<<< HEAD
-            from verl.models.transformers.qwen2_vl import get_rope_index
-=======
             # qwen-vl mrope
             if "Qwen3VLProcessor" in self.processor.__class__.__name__:
                 from verl.models.transformers.qwen3_vl import get_rope_index
             else:
                 from verl.models.transformers.qwen2_vl import get_rope_index
->>>>>>> rebuttal
 
             vision_position_ids = get_rope_index(
                 self.processor,

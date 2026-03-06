@@ -2,3 +2,5 @@ fire
 numpy 
 scipy
 matplotlib
+sentence_transformers
+datasets

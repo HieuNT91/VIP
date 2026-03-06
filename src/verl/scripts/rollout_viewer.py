@@ -555,11 +555,7 @@ app = typer.Typer()
 @app.command(help="launch TUI APP")
 def run(
     rollout_data_dir: Path,
-<<<<<<< HEAD
-    mask_str: Annotated[str, typer.Option(help="string that will be masked to *")] = "<\|image_pad\|>|<\|imgpad\|>",
-=======
     mask_str: Annotated[str, typer.Option(help="string that will be masked to *")] = r"<\|image_pad\|>|<\|imgpad\|>",
->>>>>>> rebuttal
 ):
     loop = asyncio.get_event_loop()
     loop.run_until_complete(_run(rollout_data_dir, mask_str))

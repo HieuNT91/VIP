@@ -290,14 +290,8 @@ class MegatronRewardModel(BasePPORewardModel):
                 input_ids,
                 attention_mask,
                 position_ids,
-<<<<<<< HEAD
-                sequence_parallel=self.tf_config.sequence_parallel,
-                value_model=True,
-                multi_modal_inputs=multi_modal_inputs,
-=======
                 multi_modal_inputs,
                 value_model=True,
->>>>>>> rebuttal
             )
 
             return output, loss_func

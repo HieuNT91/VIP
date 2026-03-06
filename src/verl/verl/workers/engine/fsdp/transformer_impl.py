@@ -20,11 +20,7 @@ import logging
 import os
 import warnings
 from contextlib import nullcontext
-<<<<<<< HEAD
-from typing import Callable
-=======
 from typing import Callable, Optional
->>>>>>> rebuttal
 
 import torch
 import torch.distributed
@@ -39,10 +35,6 @@ from verl.models.transformers.monkey_patch import apply_monkey_patch
 from verl.trainer.config import CheckpointConfig
 from verl.utils import tensordict_utils as tu
 from verl.utils.activation_offload import enable_activation_offloading
-<<<<<<< HEAD
-from verl.utils.attention_utils import index_first_axis, pad_input, rearrange, unpad_input
-=======
->>>>>>> rebuttal
 from verl.utils.checkpoint.fsdp_checkpoint_manager import FSDPCheckpointManager
 from verl.utils.dataset.dataset_utils import DatasetPadMode
 from verl.utils.debug import log_gpu_memory_usage
@@ -248,18 +240,6 @@ class FSDPEngine(BaseEngine):
 
     def _build_lora_module(self, module):
         module.enable_input_require_grads()
-<<<<<<< HEAD
-        # Convert config to regular Python types before creating PEFT model
-        lora_config = {
-            "task_type": TaskType.CAUSAL_LM,
-            "r": self.model_config.lora_rank,
-            "lora_alpha": self.model_config.lora_alpha,
-            "target_modules": convert_to_regular_types(self.model_config.target_modules),
-            "exclude_modules": convert_to_regular_types(self.model_config.exclude_modules),
-            "bias": "none",
-        }
-        module = get_peft_model(module, LoraConfig(**lora_config))
-=======
 
         lora_adapter_path = getattr(self.model_config, "lora_adapter_path", None)
         if lora_adapter_path is not None:
@@ -288,7 +268,6 @@ class FSDPEngine(BaseEngine):
             }
             module = get_peft_model(module, LoraConfig(**lora_config))
 
->>>>>>> rebuttal
         return module
 
     def _build_fsdp_module(self, module):
@@ -392,21 +371,10 @@ class FSDPEngine(BaseEngine):
         return module
 
     def _build_optimizer(self, module):
-<<<<<<< HEAD
-        from torch import optim
-
-        optimizer = optim.AdamW(
-            module.parameters(),
-            lr=self.optimizer_config.lr,
-            betas=self.optimizer_config.betas,
-            weight_decay=self.optimizer_config.weight_decay,
-        )
-=======
         from verl.workers.config.optimizer import build_optimizer
 
         optimizer = build_optimizer(module.parameters(), self.optimizer_config)
 
->>>>>>> rebuttal
         return optimizer
 
     def _build_lr_scheduler(self, optimizer):
@@ -416,11 +384,7 @@ class FSDPEngine(BaseEngine):
 
         total_steps = optim_config.total_training_steps
         num_warmup_steps = optim_config.lr_warmup_steps
-<<<<<<< HEAD
-        warmup_style = optim_config.warmup_style
-=======
         lr_scheduler_type = optim_config.lr_scheduler_type
->>>>>>> rebuttal
         min_lr_ratio = optim_config.min_lr_ratio
         num_cycles = optim_config.num_cycles
         if num_warmup_steps <= 0:
@@ -430,15 +394,9 @@ class FSDPEngine(BaseEngine):
         if self.rank == 0:
             print(f"Total steps: {total_steps}, num_warmup_steps: {num_warmup_steps}")
 
-<<<<<<< HEAD
-        if warmup_style == "constant":
-            lr_scheduler = get_constant_schedule_with_warmup(optimizer=optimizer, num_warmup_steps=num_warmup_steps)
-        elif warmup_style == "cosine":
-=======
         if lr_scheduler_type == "constant":
             lr_scheduler = get_constant_schedule_with_warmup(optimizer=optimizer, num_warmup_steps=num_warmup_steps)
         elif lr_scheduler_type == "cosine":
->>>>>>> rebuttal
             lr_scheduler = get_cosine_schedule_with_warmup(
                 optimizer=optimizer,
                 num_warmup_steps=num_warmup_steps,
@@ -447,11 +405,7 @@ class FSDPEngine(BaseEngine):
                 num_cycles=num_cycles,
             )
         else:
-<<<<<<< HEAD
-            raise NotImplementedError(f"Warmup style {warmup_style} is not supported")
-=======
             raise NotImplementedError(f"LR scheduler type {lr_scheduler_type} is not supported")
->>>>>>> rebuttal
         return lr_scheduler
 
     def _build_model_optimizer(self):
@@ -522,8 +476,6 @@ class FSDPEngine(BaseEngine):
         # note that the global_batch_size should include data on all the dp
         tu.assign_non_tensor(data, sp_size=self.ulysses_sequence_parallel_size)
 
-<<<<<<< HEAD
-=======
         # compute num_tokens in global batch for loss normalization
         batch_num_tokens = data["loss_mask"].sum().to(get_device_id())
         torch.distributed.all_reduce(
@@ -532,7 +484,6 @@ class FSDPEngine(BaseEngine):
         tu.assign_non_tensor(data, batch_num_tokens=batch_num_tokens.item())
         tu.assign_non_tensor(data, dp_size=self.get_data_parallel_size())
 
->>>>>>> rebuttal
         micro_batches, indices = prepare_micro_batches(
             data=data, dp_group=self.get_data_parallel_group(), same_micro_num_in_dp=True
         )
@@ -546,15 +497,6 @@ class FSDPEngine(BaseEngine):
                 loss, meta_info = self.forward_step(micro_batch, loss_function=loss_function, forward_only=forward_only)
 
                 if not forward_only:
-<<<<<<< HEAD
-                    global_bsz = data["global_batch_size"]
-                    local_micro_bsz = micro_batch.batch_size[0]
-                    # metrics contain the output, loss is dummy
-                    loss_scale_factor = local_micro_bsz / (global_bsz / self.get_data_parallel_size())
-                    # scale loss
-                    loss = loss * loss_scale_factor
-=======
->>>>>>> rebuttal
                     loss.backward()
 
             output_lst.append(meta_info)
@@ -635,9 +577,6 @@ class FSDPEngine(BaseEngine):
         else:
             raise ValueError(f"Invalid device type: {device}")
 
-<<<<<<< HEAD
-    def save_checkpoint(self, local_path, hdfs_path=None, global_step=0, max_ckpt_to_keep=None):
-=======
     def save_checkpoint(
         self,
         local_path: str,
@@ -646,7 +585,6 @@ class FSDPEngine(BaseEngine):
         max_ckpt_to_keep: Optional[int] = None,
         **kwargs,
     ) -> None:
->>>>>>> rebuttal
         """
         Save FSDP checkpoint, handling parameter offload as needed.
         """
@@ -661,13 +599,9 @@ class FSDPEngine(BaseEngine):
         if self._is_offload_param:
             offload_fsdp_model_to_cpu(self.module)
 
-<<<<<<< HEAD
-    def load_checkpoint(self, local_path, hdfs_path=None, del_local_after_load=True):
-=======
     def load_checkpoint(
         self, local_path: str, hdfs_path: Optional[str] = None, del_local_after_load: int = True, **kwargs
     ) -> None:
->>>>>>> rebuttal
         """
         Load FSDP checkpoint, restoring parameters and optimizer state.
         """
@@ -784,19 +718,12 @@ class EngineTrainModeCtx:
 class FSDPEngineWithLMHead(FSDPEngine):
     def prepare_model_inputs(self, micro_batch: TensorDict):
         use_remove_padding = tu.get_non_tensor_data(data=micro_batch, key="use_remove_padding", default=True)
-<<<<<<< HEAD
-        pad_mode = tu.get_non_tensor_data(data=micro_batch, key="pad_mode", default=DatasetPadMode.LEFT_RIGHT)
-        use_fused_kernels = tu.get_non_tensor_data(data=micro_batch, key="use_fused_kernels", default=False)
-        temperature = micro_batch["temperature"]
-
-=======
         pad_mode = tu.get_non_tensor_data(data=micro_batch, key="pad_mode", default=DatasetPadMode.NO_PADDING)
         use_fused_kernels = tu.get_non_tensor_data(data=micro_batch, key="use_fused_kernels", default=False)
         temperature = micro_batch["temperature"]
 
         assert pad_mode == DatasetPadMode.NO_PADDING, f"pad_mode {pad_mode} not supported"
 
->>>>>>> rebuttal
         multi_modal_inputs = {}
         if "multi_modal_inputs" in micro_batch.keys():
             from verl.utils.model import extract_multi_modal_inputs
@@ -816,35 +743,6 @@ class FSDPEngineWithLMHead(FSDPEngine):
             if pad_mode == DatasetPadMode.NO_PADDING:
                 input_ids_rmpad = input_ids.values().unsqueeze(0)  # (1, total_nnz)
                 position_ids_rmpad = position_ids.values().unsqueeze(0)  # (1, total_nnz)
-<<<<<<< HEAD
-            elif pad_mode == DatasetPadMode.LEFT_RIGHT:
-                attention_mask = micro_batch["attention_mask"]
-                input_ids_rmpad, indices, cu_seqlens, *_ = unpad_input(
-                    input_ids.unsqueeze(-1), attention_mask
-                )  # input_ids_rmpad (total_nnz, ...)
-                output_args["indices"] = indices
-                input_ids_rmpad = input_ids_rmpad.transpose(0, 1)  # (1, total_nnz)
-
-                # unpad the position_ids to align the rotary
-                if position_ids.dim() == 3:
-                    position_ids_rmpad = (
-                        index_first_axis(rearrange(position_ids, "c b s ... -> (b s) c ..."), indices)
-                        .transpose(0, 1)
-                        .unsqueeze(1)
-                    )  # (3, bsz, seqlen) -> (3, 1, bsz * seqlen)
-                else:
-                    position_ids_rmpad = index_first_axis(
-                        rearrange(position_ids.unsqueeze(-1), "b s ... -> (b s) ..."), indices
-                    ).transpose(0, 1)
-
-                if "image_bound" in multi_modal_inputs:
-                    from verl.utils.dataset.vision_utils import process_multi_modal_inputs_for_minicpmo
-
-                    multi_modal_inputs = process_multi_modal_inputs_for_minicpmo(
-                        input_ids, attention_mask, position_ids, cu_seqlens, multi_modal_inputs
-                    )
-=======
->>>>>>> rebuttal
             else:
                 raise NotImplementedError(f"pad_mode {pad_mode} not implemented")
 
@@ -919,16 +817,6 @@ class FSDPEngineWithLMHead(FSDPEngine):
                     "attention_mask": attention_mask,
                     "position_ids": position_ids,
                 }
-<<<<<<< HEAD
-            elif pad_mode == DatasetPadMode.LEFT_RIGHT:
-                attention_mask = micro_batch["attention_mask"]
-                model_inputs = {
-                    "input_ids": input_ids,
-                    "attention_mask": attention_mask,
-                    "position_ids": position_ids,
-                }
-=======
->>>>>>> rebuttal
             else:
                 raise NotImplementedError(f"pad_mode {pad_mode} not implemented")
 
@@ -944,11 +832,7 @@ class FSDPEngineWithLMHead(FSDPEngine):
 
     def prepare_model_outputs(self, output, output_args, micro_batch: TensorDict):
         use_remove_padding = tu.get_non_tensor_data(data=micro_batch, key="use_remove_padding", default=True)
-<<<<<<< HEAD
-        pad_mode = tu.get_non_tensor_data(data=micro_batch, key="pad_mode", default=DatasetPadMode.LEFT_RIGHT)
-=======
         pad_mode = tu.get_non_tensor_data(data=micro_batch, key="pad_mode", default=DatasetPadMode.NO_PADDING)
->>>>>>> rebuttal
         use_fused_kernels = tu.get_non_tensor_data(data=micro_batch, key="use_fused_kernels", default=False)
         temperature = micro_batch["temperature"]
         calculate_entropy = tu.get_non_tensor_data(data=micro_batch, key="calculate_entropy", default=False)
@@ -1006,40 +890,10 @@ class FSDPEngineWithLMHead(FSDPEngine):
 
             if pad_mode == DatasetPadMode.NO_PADDING:
                 cu_seqlens = input_ids.offsets()
-<<<<<<< HEAD
-                # (bsz, j1) for each sample, is the length of each sample: [real_prompt length + real_response length]
-                log_probs = torch.nested.nested_tensor_from_jagged(log_probs, cu_seqlens)
-                if calculate_entropy:
-                    entropy = torch.nested.nested_tensor_from_jagged(entropy_rmpad, cu_seqlens)
-            elif pad_mode == DatasetPadMode.LEFT_RIGHT:
-                indices = output_args["indices"]
-                response_length = micro_batch["responses"].size(-1)
-                batch_size, seqlen = input_ids.shape
-                full_log_probs = pad_input(
-                    hidden_states=log_probs.unsqueeze(-1),
-                    indices=indices,
-                    batch=batch_size,
-                    seqlen=seqlen,
-                )
-                log_probs = full_log_probs.squeeze(-1)[:, -response_length - 1 : -1]  # (bsz, response_length)
-
-                # pad back to (bsz, seqlen)
-                if calculate_entropy:
-                    full_entropy = pad_input(
-                        hidden_states=entropy_rmpad.unsqueeze(-1),
-                        indices=indices,
-                        batch=batch_size,
-                        seqlen=seqlen,
-                    )
-                # only return response part:
-                if calculate_entropy:
-                    entropy = full_entropy.squeeze(-1)[:, -response_length - 1 : -1]  # (bsz, response_length)
-=======
                 # (bsz, j1), for each sample, is the length of each sample: [real_prompt length + real_response length]
                 log_probs = torch.nested.nested_tensor_from_jagged(log_probs, cu_seqlens)
                 if calculate_entropy:
                     entropy = torch.nested.nested_tensor_from_jagged(entropy_rmpad, cu_seqlens)
->>>>>>> rebuttal
             else:
                 raise NotImplementedError(f"pad_mode {pad_mode} not implemented")
 
@@ -1067,24 +921,12 @@ class FSDPEngineWithLMHead(FSDPEngine):
                     logits_rmpad = torch.cat([t for t in logits.unbind()])
                     input_ids_rmpad_rolled = output_args["input_ids_rmpad_rolled"]
                     log_probs = logprobs_from_logits(logits=logits_rmpad, labels=input_ids_rmpad_rolled)
-<<<<<<< HEAD
-                    # (bsz, j1) for each sample, length of each sample: [real_prompt_length + real_response_length]
-=======
                     # (bsz, j1), for each sample, length of each sample: [real_prompt_length + real_response_length]
->>>>>>> rebuttal
                     log_probs = torch.nested.nested_tensor_from_jagged(log_probs, cu_seqlens)
                     if calculate_entropy:
                         entropy = torch.nested.narrow(entropy, 1, starts, seq_lengths, layout=torch.jagged)
                         entropy_rmpad = torch.cat([t for t in entropy.unbind()])
                         entropy = torch.nested.nested_tensor_from_jagged(entropy_rmpad, cu_seqlens)
-<<<<<<< HEAD
-                elif pad_mode == DatasetPadMode.LEFT_RIGHT:
-                    logits = logits[:, -response_length - 1 : -1, :]  # (bsz, response_length, vocab_size)
-                    log_probs = logprobs_from_logits(logits, micro_batch["responses"])
-                    if calculate_entropy:
-                        entropy = entropy[:, -response_length - 1 : -1]  # (bsz, response_length)
-=======
->>>>>>> rebuttal
                 else:
                     raise NotImplementedError(f"pad_mode {pad_mode} not implemented")
 
@@ -1136,11 +978,7 @@ class FSDPEngineWithValueHead(FSDPEngineWithLMHead):
 
     def prepare_model_outputs(self, output, output_args, micro_batch: TensorDict):
         use_remove_padding = tu.get_non_tensor_data(data=micro_batch, key="use_remove_padding", default=True)
-<<<<<<< HEAD
-        response_length = micro_batch["responses"].size(-1)
-=======
         pad_mode = tu.get_non_tensor_data(data=micro_batch, key="pad_mode", default=DatasetPadMode.NO_PADDING)
->>>>>>> rebuttal
 
         if use_remove_padding:
             input_ids = micro_batch["input_ids"]
@@ -1151,27 +989,16 @@ class FSDPEngineWithValueHead(FSDPEngineWithLMHead):
                 values_rmpad = output[2].squeeze(0).unsqueeze(-1)
             else:
                 values_rmpad = output.logits
-<<<<<<< HEAD
-                values_rmpad = values_rmpad.squeeze(0)  # (total_nnz)
-
-            indices = output_args["indices"]
-=======
                 values_rmpad = values_rmpad.squeeze(0)  # (total_nnz, 1)
                 # critic model arch is like Qwen3ForTokenClassfication and num_labels=1
                 # so we squeeze the last dimension here to get the value for each token
                 values_rmpad = values_rmpad.squeeze(-1)
->>>>>>> rebuttal
 
             # gather output if sp > 1
             if self.use_ulysses_sp:
                 pad_size = output_args["pad_size"]
                 values_rmpad = gather_outputs_and_unpad(values_rmpad, gather_dim=0, unpad_dim=0, padding_size=pad_size)
 
-<<<<<<< HEAD
-            # pad it back
-            values = pad_input(values_rmpad, indices=indices, batch=batch_size, seqlen=seqlen).squeeze(-1)
-            values = values[:, -response_length - 1 : -1]
-=======
             if pad_mode == DatasetPadMode.NO_PADDING:
                 cu_seqlens = input_ids.offsets()
                 # (bsz, j1), for each sample, is the length of each sample: [real_prompt length + real_response length]
@@ -1179,16 +1006,12 @@ class FSDPEngineWithValueHead(FSDPEngineWithLMHead):
             else:
                 raise NotImplementedError(f"pad_mode {pad_mode} not implemented")
 
->>>>>>> rebuttal
         else:
             if hasattr(self.module, "v_head"):
                 # For trl.AutoModelForCausalLMWithValueHead
                 values = output[2]
             else:
                 values = output.logits
-<<<<<<< HEAD
-            values = values[:, -response_length - 1 : -1].squeeze(-1)
-=======
 
             if pad_mode == DatasetPadMode.NO_PADDING:
                 cu_seqlens = input_ids.offsets()
@@ -1200,6 +1023,5 @@ class FSDPEngineWithValueHead(FSDPEngineWithLMHead):
                 values = torch.nested.nested_tensor_from_jagged(values_rmpad, cu_seqlens)
             else:
                 raise NotImplementedError(f"pad_mode {pad_mode} not implemented")
->>>>>>> rebuttal
 
         return {"values": values}

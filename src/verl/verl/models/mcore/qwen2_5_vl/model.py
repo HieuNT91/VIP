@@ -18,11 +18,7 @@
 import logging
 
 import torch
-<<<<<<< HEAD
-from megatron.core import InferenceParams, tensor_parallel
-=======
 from megatron.core import InferenceParams, mpu, tensor_parallel
->>>>>>> rebuttal
 from megatron.core.models.gpt.gpt_model import GPTModel
 
 # from .transformer_config import Qwen2VLTransformerConfig
@@ -31,11 +27,8 @@ from megatron.core.transformer import MegatronModule
 from megatron.core.transformer.spec_utils import ModuleSpec
 from megatron.core.transformer.transformer_config import TransformerConfig
 
-<<<<<<< HEAD
-=======
 from verl.models.mcore.util import preprocess_packed_seqs
 
->>>>>>> rebuttal
 from .attention import Qwen2_5VLSelfAttention
 from .vision_model import Qwen2_5VisionModel
 
@@ -155,11 +148,7 @@ class Qwen2_5VLModel(MegatronModule):
             share_embeddings_and_output_weights=language_share_embeddings_and_output_weights,
             scatter_embedding_sequence_parallel=False,
         )
-<<<<<<< HEAD
-
-=======
         assert mpu.get_context_parallel_world_size() <= 1, "please use mbridge for qwen2_5_vl with context parallelism"
->>>>>>> rebuttal
         self.share_embeddings_and_output_weights = self.language_model.share_embeddings_and_output_weights
 
     def shared_embedding_or_output_weight(self):
@@ -216,10 +205,6 @@ class Qwen2_5VLModel(MegatronModule):
         pixel_values_videos: torch.Tensor = None,
         image_grid_thw: torch.Tensor = None,
         video_grid_thw: torch.Tensor = None,
-<<<<<<< HEAD
-    ) -> torch.Tensor:
-        """Forward function of the Qwen2VL model.
-=======
         **kwargs,
     ) -> torch.Tensor:
         """Forward function of the Qwen2VL model.
@@ -230,7 +215,6 @@ class Qwen2_5VLModel(MegatronModule):
         # pack the combined_embeddings to thd here, we check if packed_seq_params is None to determine if
         #  we need to pack the combined_embeddings to thd
         # this function needs the position_ids and attention_mask in BSHD format, no matter use packed_seq or not
->>>>>>> rebuttal
 
         Args:
             image_data (torch.Tensor): input image of shape [total_thw_size, n_features].
@@ -260,21 +244,12 @@ class Qwen2_5VLModel(MegatronModule):
             video_start_index = image_mask.sum().item()
         if video_grid_thw is not None:
             video_mask = input_ids == self.video_token_id
-<<<<<<< HEAD
-            vision_grid_thw = torch.cat([vision_grid_thw, video_grid_thw], dim=0)
-            vision_data = torch.cat([vision_data, pixel_values_videos], dim=0)
-            video_start_index = image_mask.sum().item() + video_mask.sum().item()
-        use_inference_kv_cache = (
-            inference_params is not None and "image_tokens_count" in inference_params.key_value_memory_dict
-        )
-=======
             if vision_grid_thw is not None:
                 vision_grid_thw = torch.cat([vision_grid_thw, video_grid_thw], dim=0)
                 vision_data = torch.cat([vision_data, pixel_values_videos], dim=0)
             else:
                 vision_grid_thw = video_grid_thw
                 vision_data = pixel_values_videos
->>>>>>> rebuttal
         use_inference_kv_cache = (
             inference_params is not None and "image_tokens_count" in inference_params.key_value_memory_dict
         )
@@ -350,8 +325,6 @@ class Qwen2_5VLModel(MegatronModule):
                     input_ids=input_ids,
                     position_ids=None,  # NOTE: disable
                 )  # [text_seq_len, b, h_language]
-<<<<<<< HEAD
-=======
 
             if packed_seq_params is not None:
                 combined_embeddings = (
@@ -361,7 +334,6 @@ class Qwen2_5VLModel(MegatronModule):
                     .transpose(0, 1)
                     .contiguous()
                 )
->>>>>>> rebuttal
             if self.config.sequence_parallel:
                 combined_embeddings = tensor_parallel.scatter_to_sequence_parallel_region(combined_embeddings)
                 combined_embeddings = combined_embeddings.contiguous()
@@ -369,11 +341,6 @@ class Qwen2_5VLModel(MegatronModule):
             combined_embeddings = None
         from .rope_utils import get_rope_index
 
-<<<<<<< HEAD
-        position_ids, _ = get_rope_index(
-            input_ids, image_grid_thw=image_grid_thw, video_grid_thw=video_grid_thw, attention_mask=attention_mask
-        )
-=======
         # BSHD
         position_ids, _ = get_rope_index(
             input_ids,
@@ -389,7 +356,6 @@ class Qwen2_5VLModel(MegatronModule):
                 .contiguous()
             )
             attention_mask = None
->>>>>>> rebuttal
 
         output = self.language_model(
             input_ids=None,
@@ -400,10 +366,7 @@ class Qwen2_5VLModel(MegatronModule):
             # inference_params=inference_params,  # currently always None
             packed_seq_params=packed_seq_params,  # currently always None
             **(extra_block_kwargs or {}),
-<<<<<<< HEAD
-=======
             **kwargs,
->>>>>>> rebuttal
         )
 
         return output

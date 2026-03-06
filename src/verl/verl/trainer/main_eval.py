@@ -31,12 +31,8 @@ from verl.utils.fs import copy_to_local
 
 
 @ray.remote
-<<<<<<< HEAD
-def process_item(reward_fn, data_source, response_lst, reward_data):
-=======
 def process_item(config, data_source, response_lst, reward_data):
     reward_fn = get_custom_reward_fn(config)
->>>>>>> rebuttal
     ground_truth = reward_data["ground_truth"]
     score_lst = [reward_fn(data_source, r, ground_truth) for r in response_lst]
     return data_source, np.mean(score_lst)
@@ -58,17 +54,9 @@ def main(config):
 
     # evaluate test_score based on data source
     data_source_reward = defaultdict(list)
-<<<<<<< HEAD
-    compute_score = get_custom_reward_fn(config)
-
-    # Create remote tasks
-    remote_tasks = [
-        process_item.remote(compute_score, data_sources[i], responses[i], reward_model_data[i]) for i in range(total)
-=======
     # Create remote tasks
     remote_tasks = [
         process_item.remote(config, data_sources[i], responses[i], reward_model_data[i]) for i in range(total)
->>>>>>> rebuttal
     ]
 
     # Process results as they come in

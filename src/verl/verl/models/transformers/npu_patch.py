@@ -23,10 +23,7 @@ import torch.nn.functional as F
 import torch_npu
 from torch_npu import npu_rotary_mul as apply_rotary_emb
 from transformers.modeling_utils import PretrainedConfig, PreTrainedModel
-<<<<<<< HEAD
-=======
 from transformers.models.qwen2 import modeling_qwen2
->>>>>>> rebuttal
 from transformers.models.qwen2_5_vl import modeling_qwen2_5_vl
 from transformers.models.qwen3 import modeling_qwen3
 from transformers.models.qwen3_moe import modeling_qwen3_moe
@@ -38,11 +35,7 @@ logger = logging.get_logger(__name__)
 # This patch takes effect when using apply_rotary_pos_emb_flashatt on qwen2_5_vl and will be removed in
 # subsequent versions
 # https://github.com/huggingface/transformers/pull/38491
-<<<<<<< HEAD
-def apply_rotary_pos_emb_flashatt_qwen2_5_vl_npu(
-=======
 def apply_rotary_pos_emb_flashatt_npu(
->>>>>>> rebuttal
     q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
 ) -> tuple[torch.Tensor, torch.Tensor]:
     cos = cos.chunk(2, dim=-1)[0].contiguous()
@@ -69,11 +62,7 @@ def silu_forward(self, hidden_state):
     return self.down_proj(torch_npu.npu_swiglu(gate_up, dim=-1))
 
 
-<<<<<<< HEAD
-def apply_rotary_pos_emb_qwen3_npu(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
-=======
 def apply_rotary_pos_emb_npu(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
->>>>>>> rebuttal
     cos = cos.unsqueeze(unsqueeze_dim)
     sin = sin.unsqueeze(unsqueeze_dim)
     q_embed = torch_npu.npu_rotary_mul(q, cos, sin)
@@ -206,18 +195,6 @@ def _check_and_enable_flash_attn_2(
     return config
 
 
-<<<<<<< HEAD
-modeling_qwen2_5_vl.Qwen2RMSNorm.forward = rms_norm_forward
-modeling_qwen2_5_vl.Qwen2_5_VLMLP.forward = silu_forward
-modeling_qwen2_5_vl.apply_rotary_pos_emb_flashatt = apply_rotary_pos_emb_flashatt_qwen2_5_vl_npu
-modeling_qwen3_moe.Qwen3MoeRMSNorm.forward = rms_norm_forward
-modeling_qwen3_moe.Qwen3MoeSparseMoeBlock.forward = moe_block_forward
-modeling_qwen3_moe.apply_rotary_pos_emb = apply_rotary_pos_emb_qwen3_npu
-modeling_qwen3.Qwen3RMSNorm.forward = rms_norm_forward
-modeling_qwen3.Qwen3MLP.forward = silu_forward
-
-if get_version("transformers") == "4.52.4":
-=======
 modeling_qwen2.Qwen2RMSNorm.forward = rms_norm_forward
 modeling_qwen2.Qwen2MLP.forward = silu_forward
 modeling_qwen2.apply_rotary_pos_emb = apply_rotary_pos_emb_npu
@@ -231,5 +208,4 @@ modeling_qwen3.Qwen3RMSNorm.forward = rms_norm_forward
 modeling_qwen3.Qwen3MLP.forward = silu_forward
 
 if get_version("transformers") < "4.54.0":
->>>>>>> rebuttal
     PreTrainedModel._check_and_enable_flash_attn_2 = _check_and_enable_flash_attn_2

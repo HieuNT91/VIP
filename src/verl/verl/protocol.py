@@ -549,8 +549,6 @@ class DataProto:
             meta_info[DataProtoConfig.auto_padding_key] = True
         return cls(batch=tensor_dict, non_tensor_batch=non_tensors, meta_info=meta_info)
 
-<<<<<<< HEAD
-=======
     @classmethod
     def from_tensordict(
         cls,
@@ -592,7 +590,6 @@ class DataProto:
             meta_info=meta_info,
         )
 
->>>>>>> rebuttal
     def to(self, device) -> "DataProto":
         """move the batch to device
 
@@ -926,11 +923,7 @@ class DataProto:
     @staticmethod
     def concat(data: list["DataProto"]) -> "DataProto":
         """Concat a list of DataProto. The batch is concatenated among dim=0.
-<<<<<<< HEAD
-        The meta_info is assumed to be identical and will use the first one.
-=======
         The meta_info is merged, with special handling for metrics from different workers.
->>>>>>> rebuttal
 
         Args:
             data (List[DataProto]): list of DataProto
@@ -947,10 +940,6 @@ class DataProto:
         for key, val in non_tensor_batch.items():
             non_tensor_batch[key] = np.concatenate(val, axis=0)
 
-<<<<<<< HEAD
-        cls = type(data[0]) if len(data) > 0 else DataProto
-        return cls(batch=new_batch, non_tensor_batch=non_tensor_batch, meta_info=data[0].meta_info)
-=======
         # Merge meta_info with special handling for metrics
         merged_meta_info = {}
         if data:
@@ -977,7 +966,6 @@ class DataProto:
 
         cls = type(data[0]) if len(data) > 0 else DataProto
         return cls(batch=new_batch, non_tensor_batch=non_tensor_batch, meta_info=merged_meta_info)
->>>>>>> rebuttal
 
     def reorder(self, indices):
         """

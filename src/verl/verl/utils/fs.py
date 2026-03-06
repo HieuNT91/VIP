@@ -198,11 +198,7 @@ def copy_to_local(
     """Copy files/directories from HDFS to local cache with validation.
 
     Args:
-<<<<<<< HEAD
-        src (str): Source path - HDFS path (hdfs://...) or local filesystem path
-=======
         src (str): Source path - HDFS path (hdfs://...), local filesystem path, or Hugging Face model ID
->>>>>>> rebuttal
         cache_dir (str, optional): Local directory for cached files. Uses system tempdir if None
         filelock (str): Base name for file lock. Defaults to ".file.lock"
         verbose (bool): Enable copy operation logging. Defaults to False
@@ -214,8 +210,6 @@ def copy_to_local(
     """
     # Save to a local path for persistence.
     local_path = copy_local_path_from_hdfs(src, cache_dir, filelock, verbose, always_recopy)
-<<<<<<< HEAD
-=======
 
     if use_shm and isinstance(local_path, str) and not os.path.exists(local_path):
         try:
@@ -229,7 +223,6 @@ def copy_to_local(
         except Exception as e:
             print(f"WARNING: Failed to download model from Hugging Face: {e}")
 
->>>>>>> rebuttal
     # Load into shm to improve efficiency.
     if use_shm:
         return copy_to_shm(local_path)

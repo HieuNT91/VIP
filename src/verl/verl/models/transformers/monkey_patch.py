@@ -76,15 +76,9 @@ def _ulysses_flash_attention_forward(
     ulysses_sp_size = get_ulysses_sequence_parallel_world_size()
 
     ########## AlltoAll for Ulysses ##########
-<<<<<<< HEAD
-    if ulysses_sp_size > 1:
-        assert position_ids is not None, "position_ids is required for Ulysses sequence parallelism"
-
-=======
     # TODO: Disable sp for ViT, there's no elegent way to determine whether it's ViT or not.
     # Use `position_ids` as condition since ViT doesn't pass it to flash attention.
     if ulysses_sp_size > 1 and position_ids is not None:
->>>>>>> rebuttal
         # NOTE: repeat kv heads to be divided by sequence parallel. Instead of repeating nheads_q//nheads_k,
         # we choose to repeat sp_size//nheads_k, since flash_attention supports MQA/GQA.
         # For example:
@@ -116,11 +110,7 @@ def _ulysses_flash_attention_forward(
     )
 
     ########## AlltoAll for Ulysses ##########
-<<<<<<< HEAD
-    if ulysses_sp_size > 1:
-=======
     if ulysses_sp_size > 1 and position_ids is not None:
->>>>>>> rebuttal
         # (bsz, seq_len, n_head/n, head_dim) -> (bsz, seq_len/n, n_head, head_dim)
         attn_output = gather_heads_scatter_seq(attn_output, seq_dim=1, head_dim=2)
 
@@ -137,11 +127,8 @@ def patch_vlm_for_ulysses_input_slicing(model_class: type):
         def ulysses_wrapped_decoder_forward(self, *args, **kwargs):
             inputs_embeds = kwargs.get("inputs_embeds")
             position_ids = kwargs.get("position_ids")
-<<<<<<< HEAD
-=======
             visual_pos_masks = kwargs.get("visual_pos_masks")
             deepstack_visual_embeds = kwargs.get("deepstack_visual_embeds")
->>>>>>> rebuttal
             call_kwargs = kwargs.copy()
 
             current_ulysses_sp_size = get_ulysses_sequence_parallel_world_size()
@@ -154,8 +141,6 @@ def patch_vlm_for_ulysses_input_slicing(model_class: type):
             if slice_now:
                 call_kwargs["inputs_embeds"] = slice_input_tensor(inputs_embeds, dim=1, padding=False)
                 call_kwargs["position_ids"] = slice_input_tensor(position_ids, dim=-1, padding=False)
-<<<<<<< HEAD
-=======
                 # Also slice visual_pos_masks and deepstack_visual_embeds for Qwen3 VL models
                 if visual_pos_masks is not None:
                     original_visual_mask = visual_pos_masks
@@ -193,7 +178,6 @@ def patch_vlm_for_ulysses_input_slicing(model_class: type):
                                 sliced_embeds.append(embed[:0])
                         call_kwargs["deepstack_visual_embeds"] = sliced_embeds
 
->>>>>>> rebuttal
                 self._needs_initial_slice = False
             try:
                 return original_forward(self, *args, **call_kwargs)
@@ -235,14 +219,11 @@ def patch_forward_with_backends(
 
         forward_with_torch_backend_function = forward_with_torch_backend
         forward_with_triton_backend_function = forward_with_triton_backend
-<<<<<<< HEAD
-=======
     elif model.config.model_type in ["qwen3_vl", "qwen3_vl_moe"]:
         from verl.models.transformers.qwen3_vl import forward_with_torch_backend, forward_with_triton_backend
 
         forward_with_torch_backend_function = forward_with_torch_backend
         forward_with_triton_backend_function = forward_with_triton_backend
->>>>>>> rebuttal
     elif model.config.model_type == "glm4v":
         from verl.models.transformers.glm4v import forward_with_torch_backend, forward_with_triton_backend
 
@@ -348,13 +329,7 @@ def apply_monkey_patch(
             from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import (
                 Qwen2_5_VLFlashAttention2 as Qwen2_5_VLAttention,
             )
-<<<<<<< HEAD
-            from transformers.models.qwen2_vl.modeling_qwen2_vl import (
-                Qwen2VLFlashAttention2 as Qwen2VLAttention,
-            )
-=======
             from transformers.models.qwen2_vl.modeling_qwen2_vl import Qwen2VLFlashAttention2 as Qwen2VLAttention
->>>>>>> rebuttal
 
         if use_remove_padding or ulysses_sp_size > 1:
             from verl.models.transformers.qwen2_vl import qwen2_vl_attn_forward
@@ -368,9 +343,6 @@ def apply_monkey_patch(
             patch_vlm_for_ulysses_input_slicing(Qwen2_5_VLTextModel)
             patch_vlm_for_ulysses_input_slicing(Qwen2VLTextModel)
 
-<<<<<<< HEAD
-    if model.config.model_type == "glm4v":
-=======
     elif model.config.model_type in ["qwen3_vl", "qwen3_vl_moe"]:
         # Step 1: patch model to support image-text mixed data
         from transformers.models.qwen3_vl.modeling_qwen3_vl import (
@@ -398,7 +370,6 @@ def apply_monkey_patch(
             patch_vlm_for_ulysses_input_slicing(Qwen3VLMoeTextModel)
 
     elif model.config.model_type == "glm4v":
->>>>>>> rebuttal
         # Step 1: patch model to support image-text mixed data
 
         from transformers.models.glm4v.modeling_glm4v import (

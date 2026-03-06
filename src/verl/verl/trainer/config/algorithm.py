@@ -17,11 +17,7 @@ from typing import Any, Optional
 
 from verl.base_config import BaseConfig
 
-<<<<<<< HEAD
-__all__ = ["AlgoConfig", "FilterGroupsConfig", "KLControlConfig"]
-=======
 __all__ = ["AlgoConfig", "FilterGroupsConfig", "KLControlConfig", "RolloutCorrectionConfig"]
->>>>>>> rebuttal
 
 
 @dataclass
@@ -61,8 +57,6 @@ class FilterGroupsConfig(BaseConfig):
 
 
 @dataclass
-<<<<<<< HEAD
-=======
 class RolloutCorrectionConfig(BaseConfig):
     """Configuration for Rollout Correction (addresses off-policy issues in RL training).
 
@@ -337,7 +331,6 @@ class RolloutCorrectionConfig(BaseConfig):
 
 
 @dataclass
->>>>>>> rebuttal
 class AlgoConfig(BaseConfig):
     """Configuration for the algorithm.
 
@@ -354,8 +347,6 @@ class AlgoConfig(BaseConfig):
         use_pf_ppo (bool): Whether to enable preference feedback PPO.
         pf_ppo (dict[str, Any]): Preference feedback PPO settings.
         filter_groups (Optional[FilterGroupsConfig]): Filter groups configuration, used in DAPO and Entropy
-<<<<<<< HEAD
-=======
         rollout_correction (Optional[RolloutCorrectionConfig]): Rollout Correction configuration.
             Addresses off-policy issues from policy mismatch, model staleness, and general distribution shifts.
 
@@ -370,7 +361,6 @@ class AlgoConfig(BaseConfig):
 
             For backward compatibility, you can still pass a dict, which will be converted to
             RolloutCorrectionConfig automatically.
->>>>>>> rebuttal
     """
 
     gamma: float = 1.0
@@ -383,9 +373,6 @@ class AlgoConfig(BaseConfig):
     use_pf_ppo: bool = False
     pf_ppo: dict[str, Any] = field(default_factory=dict)
     filter_groups: Optional[FilterGroupsConfig] = None
-<<<<<<< HEAD
-=======
     # Rollout Correction: corrects off-policy issues (policy mismatch, model staleness, distribution shifts)
     # Set to None to disable, use RolloutCorrectionConfig presets (e.g., .tis(), .mis()), or pass dict
     rollout_correction: Optional[RolloutCorrectionConfig] = None
->>>>>>> rebuttal

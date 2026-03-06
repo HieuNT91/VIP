@@ -17,11 +17,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 
-<<<<<<< HEAD
-import regex as re
-=======
 import regex
->>>>>>> rebuttal
 from pydantic import BaseModel
 
 from verl.utils.rollout_trace import rollout_trace_op
@@ -85,11 +81,7 @@ class HermesToolParser(ToolParser):
 
         self.tool_call_start_token: str = "<tool_call>"
         self.tool_call_end_token: str = "</tool_call>"
-<<<<<<< HEAD
-        self.tool_call_regex = re.compile(r"<tool_call>(.*?)</tool_call>", re.DOTALL)
-=======
         self.tool_call_regex = regex.compile(r"<tool_call>(.*?)</tool_call>", regex.DOTALL)
->>>>>>> rebuttal
 
     @rollout_trace_op
     async def extract_tool_calls(self, responses_ids: list[int]) -> tuple[str, list[FunctionCall]]:
@@ -112,8 +104,6 @@ class HermesToolParser(ToolParser):
         content = self.tool_call_regex.sub("", text)
 
         return content, function_calls
-<<<<<<< HEAD
-=======
 
 
 @ToolParser.register("gpt-oss")
@@ -169,4 +159,3 @@ class GptOssToolParser(ToolParser):
         content = regex.sub(self.tool_call_pattern, "", text)
 
         return content, function_calls
->>>>>>> rebuttal

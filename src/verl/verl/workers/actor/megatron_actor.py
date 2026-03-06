@@ -130,12 +130,8 @@ class MegatronPPOActor(BasePPOActor):
         else:
             self.prof = None
         self.use_fused_kernels = self.config.get("use_fused_kernels", False)
-<<<<<<< HEAD
-        if self.use_fused_kernels:
-=======
         if self.use_fused_kernels and not getattr(self.config, "overlap_moe_expert_parallel_comm", False):
             # do not patch if overlap_moe_expert_parallel_comm is enabled
->>>>>>> rebuttal
             from verl.models.mcore.model_forward_fused import patch_fused_forward
 
             for model in self.actor_module:
@@ -150,10 +146,6 @@ class MegatronPPOActor(BasePPOActor):
                 "sequence_parallel": self.tf_config.sequence_parallel,
                 "DDP_impl": "local",
                 "layernorm_allreduce_bucket_threshold": 0,
-<<<<<<< HEAD
-                "pipeline_model_parallel_split_rank": None,
-=======
->>>>>>> rebuttal
                 "reduce_grads_use_alltoall": False,
             }
         )
@@ -324,8 +316,6 @@ class MegatronPPOActor(BasePPOActor):
         ]
         if self.config.use_kl_loss:
             select_keys.append("ref_log_prob")
-<<<<<<< HEAD
-=======
         # Include pre-computed IS weights if present in batch
         # Weights are computed centrally in trainer and added to batch when algorithm.rollout_is=True
         if "rollout_is_weights" in data.batch.keys():
@@ -333,7 +323,6 @@ class MegatronPPOActor(BasePPOActor):
         # Include rollout_log_probs for computing rollout_corr metrics in bypass mode
         if "rollout_log_probs" in data.batch.keys():
             select_keys.append("rollout_log_probs")
->>>>>>> rebuttal
         self.has_multi_modal_inputs = "multi_modal_inputs" in data.non_tensor_batch.keys()
         if self.has_multi_modal_inputs:
             data = data.select(select_keys, ["multi_modal_inputs"])
@@ -421,9 +410,6 @@ class MegatronPPOActor(BasePPOActor):
         def loss_func(output, data, meta_info):
             # For memory efficiency
             # We move calculation of entropy to compute_log_probs, forward_only == True
-<<<<<<< HEAD
-            device = output["log_probs"].device
-=======
             log_probs = None
             entropy = None
             if isinstance(output, dict):
@@ -435,7 +421,6 @@ class MegatronPPOActor(BasePPOActor):
                 log_probs = output
 
             device = log_probs.device
->>>>>>> rebuttal
             metrics = {}
             if forward_only:
                 if post_process_fn is None:
@@ -451,14 +436,8 @@ class MegatronPPOActor(BasePPOActor):
             response_length = responses.size(1)
             response_mask = data["response_mask"].to(bool)
             loss_agg_mode = self.config.loss_agg_mode
-<<<<<<< HEAD
-
-            # compute policy loss
-            log_prob = output["log_probs"][:, -response_length - 1 : -1].contiguous()
-=======
             # compute policy loss
             log_prob = log_probs[:, -response_length - 1 : -1].contiguous()
->>>>>>> rebuttal
             ret_entropy = None
             stats = {}
             if not forward_only:
@@ -471,33 +450,17 @@ class MegatronPPOActor(BasePPOActor):
                 loss_mode = self.config.policy_loss.get("loss_mode", "vanilla")
 
                 policy_loss_fn = get_policy_loss_fn(loss_mode)
-<<<<<<< HEAD
-                pg_loss, pg_clipfrac, ppo_kl, pg_clipfrac_lower = policy_loss_fn(
-=======
 
                 # Extract pre-computed rollout correction weights if present
                 # Weights are computed centrally in trainer and added when algorithm.rollout_is=True
                 rollout_is_weights = data.get("rollout_is_weights", None)
                 pg_loss, pg_metrics = policy_loss_fn(
->>>>>>> rebuttal
                     old_log_prob=old_log_prob,
                     log_prob=log_prob,
                     advantages=advantages,
                     response_mask=response_mask,
                     loss_agg_mode=loss_agg_mode,
                     config=self.config,
-<<<<<<< HEAD
-                )
-
-                stats.update(
-                    {
-                        "actor/pg_loss": pg_loss.detach().item(),
-                        "actor/pg_clipfrac": pg_clipfrac.detach().item(),
-                        "actor/ppo_kl": ppo_kl.detach().item(),
-                        "actor/pg_clipfrac_lower": pg_clipfrac_lower.detach().item(),
-                    }
-                )
-=======
                     rollout_is_weights=rollout_is_weights,
                 )
                 stats.update(pg_metrics)
@@ -517,7 +480,6 @@ class MegatronPPOActor(BasePPOActor):
                     stats.update(rollout_corr_metrics)
 
                 stats["actor/pg_loss"] = pg_loss.detach().item()
->>>>>>> rebuttal
                 policy_loss = pg_loss
 
             if calculate_entropy:
@@ -547,9 +509,6 @@ class MegatronPPOActor(BasePPOActor):
             append_to_dict(metrics, stats)
             return policy_loss, [metrics, ret_entropy]
 
-<<<<<<< HEAD
-        def forward_step(batch_iter, model):
-=======
         def forward_step(batch_iter, model, return_schedule_plan: bool = False):
             """
             Args:
@@ -570,7 +529,6 @@ class MegatronPPOActor(BasePPOActor):
                 # TODO: support VLM with MoE
                 from verl.models.mcore.model_forward_1f1b_overlap import gptmodel_forward_1f1b_overlap
 
->>>>>>> rebuttal
             batch = next(batch_iter)
             batch = batch.to(get_device_id())
             batch = batch.contiguous()
@@ -597,19 +555,6 @@ class MegatronPPOActor(BasePPOActor):
 
             if self.use_fused_kernels:
                 forward_fn = get_mcore_forward_fused_fn(self.hf_config)
-<<<<<<< HEAD
-                # return dict of [logits, entropy]
-                output = forward_fn(
-                    model,
-                    input_ids,
-                    position_ids,
-                    attention_mask,
-                    sequence_parallel=self.tf_config.sequence_parallel,
-                    multi_modal_inputs=multi_modal_inputs,
-                    labels=label,
-                    labels_mask=label_mask,
-                    temperature=temperature,
-=======
                 if return_schedule_plan:
                     forward_fn = gptmodel_forward_1f1b_overlap
                 # return dict of [logits, entropy]
@@ -622,7 +567,6 @@ class MegatronPPOActor(BasePPOActor):
                     labels_mask=label_mask,
                     temperature=temperature,
                     multi_modal_inputs=multi_modal_inputs,
->>>>>>> rebuttal
                 )
             else:
                 forward_fn = get_mcore_forward_fn(self.hf_config)
@@ -650,18 +594,10 @@ class MegatronPPOActor(BasePPOActor):
 
                 logits_processor_args = {"label": label, "label_mask": label_mask}
                 output = forward_fn(
-<<<<<<< HEAD
-                    model,
-                    input_ids,
-                    attention_mask,
-                    position_ids,
-                    sequence_parallel=self.tf_config.sequence_parallel,
-=======
                     model=model,
                     input_ids=input_ids,
                     attention_mask=attention_mask,
                     position_ids=position_ids,
->>>>>>> rebuttal
                     multi_modal_inputs=multi_modal_inputs,
                     logits_processor=logits_processor,
                     logits_processor_args=logits_processor_args,

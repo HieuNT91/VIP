@@ -43,21 +43,14 @@ def main(config):
 
 
 # Define a function to run the PPO-like training process
-<<<<<<< HEAD
-def run_ppo(config) -> None:
-=======
 def run_ppo(config, task_runner_class=None) -> None:
->>>>>>> rebuttal
     """Initialize Ray cluster and run distributed PPO training process.
 
     Args:
         config: Training configuration object containing all necessary parameters
                 for distributed PPO training including Ray initialization settings,
                 model paths, and training hyperparameters.
-<<<<<<< HEAD
-=======
         task_runner_class: For recipe to change TaskRunner.
->>>>>>> rebuttal
     """
     # Check if Ray is not initialized
     if not ray.is_initialized():
@@ -68,8 +61,6 @@ def run_ppo(config, task_runner_class=None) -> None:
         default_runtime_env = get_ppo_ray_runtime_env()
         ray_init_kwargs = config.ray_kwargs.get("ray_init", {})
         runtime_env_kwargs = ray_init_kwargs.get("runtime_env", {})
-<<<<<<< HEAD
-=======
 
         if config.transfer_queue.enable:
             # Add runtime environment variables for transfer queue
@@ -77,18 +68,14 @@ def run_ppo(config, task_runner_class=None) -> None:
             runtime_env_vars["TRANSFER_QUEUE_ENABLE"] = "1"
             runtime_env_kwargs["env_vars"] = runtime_env_vars
 
->>>>>>> rebuttal
         runtime_env = OmegaConf.merge(default_runtime_env, runtime_env_kwargs)
         ray_init_kwargs = OmegaConf.create({**ray_init_kwargs, "runtime_env": runtime_env})
         print(f"ray init kwargs: {ray_init_kwargs}")
         ray.init(**OmegaConf.to_container(ray_init_kwargs))
 
-<<<<<<< HEAD
-=======
     if task_runner_class is None:
         task_runner_class = ray.remote(num_cpus=1)(TaskRunner)  # please make sure main_task is not scheduled on head
 
->>>>>>> rebuttal
     # Create a remote instance of the TaskRunner class, and
     # Execute the `run` method of the TaskRunner instance remotely and wait for it to complete
     if (
@@ -103,15 +90,9 @@ def run_ppo(config, task_runner_class=None) -> None:
         nsight_options = OmegaConf.to_container(
             config.global_profiler.global_tool_config.nsys.controller_nsight_options
         )
-<<<<<<< HEAD
-        runner = TaskRunner.options(runtime_env={"nsight": nsight_options}).remote()
-    else:
-        runner = TaskRunner.remote()
-=======
         runner = task_runner_class.options(runtime_env={"nsight": nsight_options}).remote()
     else:
         runner = task_runner_class.remote()
->>>>>>> rebuttal
     ray.get(runner.run.remote(config))
 
     # [Optional] get the path of the timeline trace file from the configuration, default to None
@@ -121,10 +102,6 @@ def run_ppo(config, task_runner_class=None) -> None:
         ray.timeline(filename=timeline_json_file)
 
 
-<<<<<<< HEAD
-@ray.remote(num_cpus=1)  # please make sure main_task is not scheduled on head
-=======
->>>>>>> rebuttal
 class TaskRunner:
     """Ray remote class for executing distributed PPO training tasks.
 
@@ -324,10 +301,6 @@ class TaskRunner:
         from verl.utils.dataset.rl_dataset import collate_fn
 
         # Create training and validation datasets.
-<<<<<<< HEAD
-        train_dataset = create_rl_dataset(config.data.train_files, config.data, tokenizer, processor, is_train=True)
-        val_dataset = create_rl_dataset(config.data.val_files, config.data, tokenizer, processor, is_train=False)
-=======
         train_dataset = create_rl_dataset(
             config.data.train_files,
             config.data,
@@ -344,7 +317,6 @@ class TaskRunner:
             is_train=False,
             max_samples=config.data.get("val_max_samples", -1),
         )
->>>>>>> rebuttal
         train_sampler = create_rl_sampler(config.data, train_dataset)
 
         # Initialize the PPO trainer.
@@ -369,11 +341,7 @@ class TaskRunner:
         trainer.fit()
 
 
-<<<<<<< HEAD
-def create_rl_dataset(data_paths, data_config, tokenizer, processor, is_train=True):
-=======
 def create_rl_dataset(data_paths, data_config, tokenizer, processor, is_train=True, max_samples: int = -1):
->>>>>>> rebuttal
     """Create a dataset.
 
     Arguments:
@@ -417,10 +385,7 @@ def create_rl_dataset(data_paths, data_config, tokenizer, processor, is_train=Tr
         tokenizer=tokenizer,
         processor=processor,
         config=data_config,
-<<<<<<< HEAD
-=======
         max_samples=max_samples,
->>>>>>> rebuttal
     )
 
     return dataset
@@ -459,13 +424,9 @@ def create_rl_sampler(data_config, dataset):
     # If shuffling is enabled in the data configuration, create a random sampler.
     elif data_config.shuffle:
         train_dataloader_generator = torch.Generator()
-<<<<<<< HEAD
-        train_dataloader_generator.manual_seed(data_config.get("seed", 1))
-=======
         seed = data_config.get("seed")
         if seed is not None:
             train_dataloader_generator.manual_seed(seed)
->>>>>>> rebuttal
         sampler = RandomSampler(data_source=dataset, generator=train_dataloader_generator)
     else:
         # If shuffling is disabled, use a sequential sampler to iterate through the dataset in order.

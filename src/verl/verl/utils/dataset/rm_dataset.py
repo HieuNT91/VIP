@@ -13,13 +13,9 @@
 # limitations under the License.
 
 import os
-<<<<<<< HEAD
-
-=======
 from typing import Optional
 
 import numpy as np
->>>>>>> rebuttal
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
@@ -52,23 +48,17 @@ class RMDataset(Dataset):
         max_length=1024,
         add_eos=True,
         cache_dir="~/.cache/verl/rm",
-<<<<<<< HEAD
-=======
         max_samples: int = -1,
         shuffle: bool = False,
         seed: Optional[int] = None,
->>>>>>> rebuttal
     ):
         if not isinstance(parquet_files, list):
             parquet_files = [parquet_files]
 
         self.parquet_files = parquet_files
-<<<<<<< HEAD
-=======
         self.max_samples = max_samples
         self.shuffle = shuffle
         self.seed = seed
->>>>>>> rebuttal
         self.cache_dir = os.path.expanduser(cache_dir)
         if isinstance(tokenizer, str):
             tokenizer = hf_tokenizer(tokenizer)
@@ -106,8 +96,6 @@ class RMDataset(Dataset):
             dataframe = pd.read_parquet(parquet_file)
             dataframes.append(dataframe)
         self.dataframe = pd.concat(dataframes)
-<<<<<<< HEAD
-=======
 
         total = len(self.dataframe)
         print(f"dataset len: {len(self.dataframe)}")
@@ -122,7 +110,6 @@ class RMDataset(Dataset):
             self.dataframe = self.dataframe.iloc[indices.tolist()]
             print(f"selected {self.max_samples} random samples out of {total}")
 
->>>>>>> rebuttal
         self.prompts = self.dataframe[self.prompt_key].tolist()
         self.chosen_responses = self.dataframe[self.chosen_key].tolist()
         self.rejected_responses = self.dataframe[self.rejected_key].tolist()

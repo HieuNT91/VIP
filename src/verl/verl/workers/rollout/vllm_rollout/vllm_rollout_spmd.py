@@ -31,21 +31,13 @@ import getpass
 import inspect
 import logging
 import os
-<<<<<<< HEAD
-import pickle
-import socket
-=======
->>>>>>> rebuttal
 import time
 from contextlib import contextmanager
 from dataclasses import asdict
 from types import MethodType
 from typing import Any, Generator
 
-<<<<<<< HEAD
-=======
 import cloudpickle as pickle
->>>>>>> rebuttal
 import numpy as np
 import ray
 import torch
@@ -57,17 +49,6 @@ from omegaconf import ListConfig
 from tensordict import TensorDict
 from torch.distributed.device_mesh import DeviceMesh
 from vllm import LLM, SamplingParams
-<<<<<<< HEAD
-from vllm.config import CompilationConfig, CompilationLevel, LoRAConfig
-from vllm.lora.request import LoRARequest
-from vllm.model_executor.sampling_metadata import SamplingMetadata
-from vllm.worker.worker_base import WorkerWrapperBase
-
-from verl import DataProto
-from verl.third_party.vllm import VLLM_SLEEP_LEVEL
-from verl.utils.device import is_npu_available
-from verl.utils.distributed import initialize_global_process_group_ray
-=======
 from vllm.config import CompilationConfig, LoRAConfig
 from vllm.lora.request import LoRARequest
 
@@ -94,15 +75,12 @@ from verl.third_party.vllm import VLLM_SLEEP_LEVEL, get_version
 from verl.utils.device import is_npu_available
 from verl.utils.distributed import initialize_global_process_group_ray
 from verl.utils.model import get_lora_rank_from_adapter
->>>>>>> rebuttal
 from verl.utils.profiler import GPUMemoryLogger
 from verl.utils.ray_utils import ray_noset_visible_devices
 from verl.utils.torch_functional import get_response_mask, pad_2d_list_to_length
 from verl.utils.vllm import TensorLoRARequest, VLLMHijack, is_version_ge
 from verl.workers.config import HFModelConfig, RolloutConfig
 from verl.workers.rollout.base import BaseRollout
-<<<<<<< HEAD
-=======
 from verl.workers.rollout.utils import get_free_port, is_valid_ipv6_address
 from verl.workers.rollout.vllm_rollout.utils import (
     VLLM_LORA_INT_ID,
@@ -110,7 +88,6 @@ from verl.workers.rollout.vllm_rollout.utils import (
     VLLM_LORA_PATH,
     get_vllm_max_lora_rank,
 )
->>>>>>> rebuttal
 
 logger = logging.getLogger(__file__)
 logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
@@ -135,8 +112,6 @@ if is_version_ge(pkg="vllm", minver="0.7.3"):
     VLLMHijack.hijack()
 
 
-<<<<<<< HEAD
-=======
 def _check_vllm_version_for_sleep_level():
     # https://github.com/vllm-project/vllm/issues/25171
     minver = "0.11.0"
@@ -147,7 +122,6 @@ def _check_vllm_version_for_sleep_level():
     return vs.parse(current_version) >= vs.parse(minver)
 
 
->>>>>>> rebuttal
 class vLLMRollout(BaseRollout):
     def __init__(
         self,
@@ -166,10 +140,6 @@ class vLLMRollout(BaseRollout):
         tokenizer = model_config.tokenizer
         model_hf_config = model_config.hf_config
         trust_remote_code = model_config.trust_remote_code
-<<<<<<< HEAD
-        self.lora_kwargs = (
-            {"enable_lora": True, "max_loras": 1, "max_lora_rank": model_config.lora_rank}
-=======
 
         lora_adapter_path = getattr(model_config, "lora_adapter_path", None)
         if lora_adapter_path is not None:
@@ -179,7 +149,6 @@ class vLLMRollout(BaseRollout):
 
         self.lora_kwargs = (
             {"enable_lora": True, "max_loras": 1, "max_lora_rank": get_vllm_max_lora_rank(lora_rank)}
->>>>>>> rebuttal
             if model_config.lora_rank > 0
             else {}
         )
@@ -250,18 +219,12 @@ class vLLMRollout(BaseRollout):
         # enforce_eager must be False to use cudagraph
         if not config.enforce_eager and cudagraph_capture_sizes:
             if isinstance(cudagraph_capture_sizes, ListConfig):
-<<<<<<< HEAD
-                compilation_config["compilation_config"] = CompilationConfig(
-                    level=CompilationLevel.PIECEWISE, cudagraph_capture_sizes=cudagraph_capture_sizes
-                )
-=======
                 compilation_args = {"cudagraph_capture_sizes": cudagraph_capture_sizes}
                 if _use_compilation_mode:
                     compilation_args["mode"] = CompilationMode.VLLM_COMPILE
                 else:
                     compilation_args["level"] = CompilationLevel.PIECEWISE
                 compilation_config["compilation_config"] = CompilationConfig(**compilation_args)
->>>>>>> rebuttal
             else:
                 logger.warning(f"cudagraph_capture_sizes must be a list, but got {cudagraph_capture_sizes}")
 
@@ -521,11 +484,7 @@ class vLLMRollout(BaseRollout):
                 lora_int_id=lora_int_id,
                 lora_path="simon_lora_path",
                 peft_config=asdict(peft_config),
-<<<<<<< HEAD
-                lora_tensors=weights,
-=======
                 lora_tensors=dict(weights),
->>>>>>> rebuttal
             )
             self.inference_engine.llm_engine.add_lora(lora_reqest)
             logger.info(f"vLLM load weights, loaded_params: {len(weights)}")
@@ -543,17 +502,10 @@ def _monkey_patch_compute_logits(model, vocab_size: int):
 
     def compute_logits(
         self,
-<<<<<<< HEAD
-        hidden_states: torch.Tensor,
-        sampling_metadata: SamplingMetadata,
-    ) -> torch.Tensor:
-        logits = original_compute_logits(hidden_states, sampling_metadata)
-=======
         *args,
         **kwargs,
     ) -> torch.Tensor:
         logits = original_compute_logits(*args, **kwargs)
->>>>>>> rebuttal
         logits[..., vocab_size:] = float("-inf")
         return logits
 
@@ -570,17 +522,6 @@ class vLLMAsyncRollout(BaseRollout):
         device_mesh: DeviceMesh,
     ):
         super().__init__(config, model_config, device_mesh)
-<<<<<<< HEAD
-        self.tokenizer = model_config.tokenizer
-        self.inference_engine: WorkerWrapperBase = None
-        self.address = self._init_zeromq()
-        self.lora_config = (
-            {"max_loras": 1, "max_lora_rank": model_config.lora_rank} if model_config.lora_rank > 0 else {}
-        )
-
-        # https://github.com/vllm-project/vllm/issues/25171
-        if config.layered_summon or config.expert_parallel_size > 1:
-=======
         self.tokenizer = self.model_config.tokenizer
         self.inference_engine: WorkerWrapperBase = None
         self.address = self._init_zeromq()
@@ -592,7 +533,6 @@ class vLLMAsyncRollout(BaseRollout):
 
         if config.layered_summon or (config.expert_parallel_size > 1 and not _check_vllm_version_for_sleep_level()):
             logger.warning("Setting the sleep level to 1 may cause a memory overflow.")
->>>>>>> rebuttal
             self.sleep_level = 1
         else:
             self.sleep_level = VLLM_SLEEP_LEVEL
@@ -606,21 +546,12 @@ class vLLMAsyncRollout(BaseRollout):
 
         # File lock to prevent multiple workers listen to same port
         with FileLock(f"/tmp/verl_vllm_zmq_{getpass.getuser()}.lock"):
-<<<<<<< HEAD
-=======
             context = zmq.asyncio.Context()
             self.socket = context.socket(zmq.REP)
->>>>>>> rebuttal
             if socket_type == "ipc":
                 pid = os.getpid()
                 address = f"ipc:///tmp/verl_vllm_zmq_{pid}_{getpass.getuser()}.ipc"
             else:
-<<<<<<< HEAD
-                ip, port = self._get_free_port()
-                address = f"tcp://{ip}:{port}"
-            context = zmq.asyncio.Context()
-            self.socket = context.socket(zmq.REP)
-=======
                 ip = ray.util.get_node_ip_address().strip("[]")
                 port, sock = get_free_port(ip)
                 if is_valid_ipv6_address(ip):
@@ -628,7 +559,6 @@ class vLLMAsyncRollout(BaseRollout):
                     self.socket.setsockopt(zmq.IPV6, 1)
                 else:
                     address = f"tcp://{ip}:{port}"
->>>>>>> rebuttal
             self.socket.bind(address)
 
         loop = asyncio.get_running_loop()
@@ -636,16 +566,6 @@ class vLLMAsyncRollout(BaseRollout):
 
         return address
 
-<<<<<<< HEAD
-    def _get_free_port(self):
-        ip = ray.util.get_node_ip_address()
-        with socket.socket() as sock:
-            sock.bind(("", 0))
-            port = sock.getsockname()[1]
-        return ip, port
-
-=======
->>>>>>> rebuttal
     async def _loop_forever(self):
         while True:
             try:
@@ -655,12 +575,8 @@ class vLLMAsyncRollout(BaseRollout):
                 await self.socket.send(pickle.dumps(result))
             except Exception as e:
                 logger.exception(f"vLLMAsyncRollout _loop_forever error: {e}")
-<<<<<<< HEAD
-                os._exit(-1)
-=======
                 await self.socket.send(pickle.dumps(e))
                 break
->>>>>>> rebuttal
 
     def _init_worker(self, all_kwargs: list[dict[str, Any]]):
         """Initialize worker engine."""
@@ -675,12 +591,8 @@ class vLLMAsyncRollout(BaseRollout):
         )
         self.vllm_config = all_kwargs[0]["vllm_config"]
         if self.lora_config:
-<<<<<<< HEAD
-            self.vllm_config.lora_config = LoRAConfig(**self.lora_config)
-=======
             lora_dtype = getattr(torch, self.config.dtype)
             self.vllm_config.lora_config = LoRAConfig(lora_dtype=lora_dtype, **self.lora_config)
->>>>>>> rebuttal
         self.inference_engine = WorkerWrapperBase(vllm_config=self.vllm_config)
         self.inference_engine.init_worker(all_kwargs)
 
@@ -720,17 +632,6 @@ class vLLMAsyncRollout(BaseRollout):
         """
         peft_config, base_sync_done = kwargs.get("peft_config", None), kwargs.get("base_sync_done", False)
         if peft_config and base_sync_done:
-<<<<<<< HEAD
-            lora_int_id = int(time.time_ns() % 0x7FFFFFFF)
-            lora_reqest = TensorLoRARequest(
-                lora_name=f"{lora_int_id}",
-                lora_int_id=lora_int_id,
-                lora_path="simon_lora_path",
-                peft_config=asdict(peft_config),
-                lora_tensors=weights,
-            )
-            self.inference_engine.worker.add_lora(lora_reqest)
-=======
             # In async mode, make sure the old lora is removed before adding the new one
             self.inference_engine.worker.remove_lora(VLLM_LORA_INT_ID)
             lora_request = TensorLoRARequest(
@@ -741,7 +642,6 @@ class vLLMAsyncRollout(BaseRollout):
                 lora_tensors=dict(weights),
             )
             self.inference_engine.worker.add_lora(lora_request)
->>>>>>> rebuttal
             logger.info(f"vLLM load weights, loaded_params: {len(weights)}")
         else:
             from verl.utils.vllm.patch import patch_vllm_moe_model_weight_loader

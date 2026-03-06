@@ -19,11 +19,7 @@ from omegaconf import MISSING
 
 from verl.base_config import BaseConfig
 
-<<<<<<< HEAD
-__all__ = ["OptimizerConfig", "FSDPOptimizerConfig", "McoreOptimizerConfig"]
-=======
 __all__ = ["OptimizerConfig", "FSDPOptimizerConfig", "McoreOptimizerConfig", "build_optimizer"]
->>>>>>> rebuttal
 
 
 @dataclass
@@ -62,20 +58,6 @@ class FSDPOptimizerConfig(OptimizerConfig):
     """FSDP optimizer configuration extending base OptimizerConfig.
 
     Args:
-<<<<<<< HEAD
-        lr (float): Learning rate.
-        min_lr_ratio (Optional[float]): Minimum LR ratio for cosine schedule.
-        warmup_style (str): LR warmup style: "constant" or "cosine".
-        num_cycles (float): Number of cosine cycles in LR schedule.
-    """
-
-    min_lr_ratio: Optional[float] = None
-    warmup_style: str = "constant"
-    num_cycles: float = 0.5
-
-    def __post_init__(self):
-        assert self.warmup_style in ["constant", "cosine"]
-=======
         optimizer (str): Optimizer class name (e.g., "AdamW", "AdamW8bit", "_AdamW").
         optimizer_impl (str): Module path to import optimizer from (e.g., "torch.optim", "torchao.optim",
             "bitsandbytes.optim").
@@ -105,7 +87,6 @@ class FSDPOptimizerConfig(OptimizerConfig):
             )
             self.lr_scheduler_type = self.warmup_style
         assert self.lr_scheduler_type in ["constant", "cosine"]
->>>>>>> rebuttal
         return super().__post_init__()
 
 
@@ -137,8 +118,6 @@ class McoreOptimizerConfig(OptimizerConfig):
     lr_wsd_decay_steps: Optional[int] = None
     use_checkpoint_opt_param_scheduler: bool = False
     override_optimizer_config: Optional[dict] = None
-<<<<<<< HEAD
-=======
 
 
 def build_optimizer(parameters, config: FSDPOptimizerConfig):
@@ -195,4 +174,3 @@ def build_optimizer(parameters, config: FSDPOptimizerConfig):
         ) from e
 
     return optimizer_cls(parameters, **optimizer_args)
->>>>>>> rebuttal

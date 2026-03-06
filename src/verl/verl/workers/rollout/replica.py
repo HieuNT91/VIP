@@ -16,25 +16,16 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from enum import Enum
-<<<<<<< HEAD
-from typing import Optional
-
-=======
 from typing import Callable, Optional
 
 from omegaconf import DictConfig
->>>>>>> rebuttal
 from pydantic import BaseModel
 from ray.actor import ActorHandle
 
 from verl.single_controller.ray import RayClassWithInitArgs, RayWorkerGroup
 from verl.trainer.ppo.ray_trainer import RayResourcePool, ResourcePoolManager
 from verl.utils.config import omega_conf_to_dataclass
-<<<<<<< HEAD
-from verl.workers.config import HFModelConfig, RewardModelConfig, RolloutConfig
-=======
 from verl.workers.config import RolloutConfig
->>>>>>> rebuttal
 
 logger = logging.getLogger(__file__)
 
@@ -80,29 +71,14 @@ class RolloutReplica(ABC):
 
     Args:
         replica_rank: int, rank of this rollout replica.
-<<<<<<< HEAD
-        config: RolloutConfig | RewardModelConfig, full config.
-=======
         config: RolloutConfig, full config.
         model_config: DictConfig, model config.
->>>>>>> rebuttal
         gpus_per_node: int, number of gpus per node.
     """
 
     def __init__(
         self,
         replica_rank: int,
-<<<<<<< HEAD
-        config: RolloutConfig | RewardModelConfig,
-        model_config: HFModelConfig,
-        gpus_per_node: int = 8,
-    ) -> None:
-        self.replica_rank = replica_rank
-        self.config = omega_conf_to_dataclass(config)
-        self.model_config: HFModelConfig = omega_conf_to_dataclass(model_config, dataclass_type=HFModelConfig)
-
-        self.world_size = self.config.tensor_model_parallel_size * self.config.data_parallel_size
-=======
         config: RolloutConfig,
         model_config: DictConfig,
         gpus_per_node: int = 8,
@@ -117,16 +93,12 @@ class RolloutReplica(ABC):
             * self.config.data_parallel_size
             * self.config.pipeline_model_parallel_size
         )
->>>>>>> rebuttal
         self.gpus_per_node = min(gpus_per_node, self.world_size)
         assert self.world_size % self.gpus_per_node == 0, (
             f"world_size {self.world_size} must be divisible by gpus_per_node {self.gpus_per_node}"
         )
         self.nnodes = self.world_size // self.gpus_per_node
-<<<<<<< HEAD
-=======
         self.is_reward_model = is_reward_model
->>>>>>> rebuttal
 
         self.rollout_mode: RolloutMode = None
         self.workers: list[ActorHandle] = []
@@ -148,42 +120,24 @@ class RolloutReplica(ABC):
         ]
         await self.launch_servers()
 
-<<<<<<< HEAD
-    async def init_colocated(self, resource_pool: RayResourcePool):
-=======
     # TODO(@dyy): init with resource_pool?
     async def init_colocated(self, worker_group: RayWorkerGroup):
->>>>>>> rebuttal
         """Init colocated rollout server, rollout engine and hybrid engine colocated in same ray placement group
         but in separate processes.
 
         Args:
             resource_pool: RayResourcePool, ray placement group where hybrid engine processes have been launched.
         """
-<<<<<<< HEAD
-        raise NotImplementedError
-=======
         self.rollout_mode = RolloutMode.COLOCATED
         self.workers = worker_group.workers[
             self.world_size * self.replica_rank : self.world_size * (self.replica_rank + 1)
         ]
         await self.launch_servers()
->>>>>>> rebuttal
 
     async def init_standalone(self):
         """Init standalone rollout server, create new resource pool for this rollout."""
         # create resource pool for this rollout
         self.rollout_mode = RolloutMode.STANDALONE
-<<<<<<< HEAD
-        resource_pool_spec = {
-            f"rollout_pool_{self.replica_rank}": [self.gpus_per_node] * self.nnodes,
-        }
-        resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=None)
-        resource_pool_manager.create_resource_pool()
-        self.resource_pool = resource_pool_manager.resource_pool_dict[f"rollout_pool_{self.replica_rank}"]
-
-        # create worker group for this rollout
-=======
         resource_pool_name = (
             f"rollout_pool_{self.replica_rank}" if self.is_reward_model else f"rollout_pool_reward_{self.replica_rank}"
         )
@@ -196,18 +150,13 @@ class RolloutReplica(ABC):
 
         # create worker group for this rollout
 
->>>>>>> rebuttal
         worker_group = RayWorkerGroup(
             resource_pool=self.resource_pool,
             ray_cls_with_init=self.get_ray_class_with_init_args(),
             bin_pack=False,
-<<<<<<< HEAD
-            name_prefix=f"rollout_standalone_{self.replica_rank}",
-=======
             name_prefix=f"rollout_standalone_{self.replica_rank}"
             if not self.is_reward_model
             else f"rollout_reward_standalone_{self.replica_rank}",
->>>>>>> rebuttal
         )
         self.workers = worker_group.workers
         await self.launch_servers()
@@ -241,37 +190,6 @@ class RolloutReplica(ABC):
         await asyncio.gather(*[server.sleep.remote() for server in self.servers])
 
 
-<<<<<<< HEAD
-def get_rollout_replica_class(rollout: str) -> type[RolloutReplica]:
-    if rollout == "vllm":
-        from verl.workers.rollout.vllm_rollout.vllm_async_server import vLLMReplica
-
-        return vLLMReplica
-    elif rollout == "sglang":
-        # NOTE: verl driver is cpu only, avoid sglang fp8 quantization import error.
-        os.environ["SGLANG_USE_CPU_ENGINE"] = "1"
-
-        # TODO: remove this once we bump to sglang>=0.5.1
-        try:
-            import vllm  # noqa: F401
-        except ImportError:
-            import sys
-            from unittest.mock import Mock
-
-            mock_vllm = Mock()
-            mock_vllm._custom_ops = Mock()
-            mock_vllm._custom_ops.scaled_fp8_quant = Mock()
-
-            sys.modules["vllm"] = mock_vllm
-            sys.modules["vllm._custom_ops"] = mock_vllm._custom_ops
-
-        from verl.workers.rollout.sglang_rollout.async_sglang_server import SGLangReplica
-
-        del os.environ["SGLANG_USE_CPU_ENGINE"]
-        return SGLangReplica
-    else:
-        raise ValueError(f"Unknown rollout mode: {rollout}")
-=======
 class RolloutReplicaRegistry:
     """Factory for managing rollout replica implementations."""
 
@@ -326,4 +244,3 @@ RolloutReplicaRegistry.register("sglang", _load_sglang)
 # Original function for backward compatibility
 def get_rollout_replica_class(rollout: str) -> type[RolloutReplica]:
     return RolloutReplicaRegistry.get(rollout)
->>>>>>> rebuttal

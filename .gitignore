@@ -1,5 +1,6 @@
 *.whl
 logs/
+figures/
 clone_space/
 tensorboard_logs/
 base_models/

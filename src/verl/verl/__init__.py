@@ -22,10 +22,7 @@ from packaging.version import parse as parse_version
 
 from .protocol import DataProto
 from .utils.device import is_npu_available
-<<<<<<< HEAD
-=======
 from .utils.import_utils import import_external_libs
->>>>>>> rebuttal
 from .utils.logging_utils import set_basic_config
 
 version_folder = os.path.dirname(os.path.join(os.path.abspath(__file__)))
@@ -39,8 +36,6 @@ set_basic_config(level=logging.WARNING)
 
 __all__ = ["DataProto", "__version__"]
 
-<<<<<<< HEAD
-=======
 
 modules = os.getenv("VERL_USE_EXTERNAL_MODULES", "")
 if modules:
@@ -48,7 +43,6 @@ if modules:
     import_external_libs(modules)
 
 
->>>>>>> rebuttal
 if os.getenv("VERL_USE_MODELSCOPE", "False").lower() == "true":
     if importlib.util.find_spec("modelscope") is None:
         raise ImportError("You are using the modelscope hub, please install modelscope by `pip install modelscope -U`")
